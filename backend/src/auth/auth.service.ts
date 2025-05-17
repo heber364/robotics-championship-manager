@@ -104,6 +104,8 @@ export class AuthService {
 
   }
 
+  
+
   async updateRtHash(userId: number, rt: string) {
     const hash = await argon.hash(rt);
 
@@ -140,5 +142,7 @@ export class AuthService {
       refresh_token: rtToken,
     };
   }
+
+
 
 }

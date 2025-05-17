@@ -24,3 +24,17 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsImVtYWlsI
   "email": "heber@gmail.com",
   "password": "teste"
 }
+
+### Send email
+POST http://localhost:3333/email/send
+Content-Type: application/json
+
+{
+  "recipients": [{
+    "name": "Heber Lima",
+    "address": "heberlimasilva@gmail.com"
+  }],
+  "subject": "Assunto do email: Testando envio de email via NestJS",
+  "text": "Mensagem em texto simples",
+  "html": "<b>Hello world</b>"
+}

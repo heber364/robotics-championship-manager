@@ -12,7 +12,15 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  email  String  @unique
-  hash   String
-  hashRt String?
+  email        String    @unique
+  hash         String
+  hashRt       String?
+  roles        Role[]
+  otpCode      String?   @unique
+  otpExpiresAt DateTime?
+}
+
+enum Role {
+  USER
+  ADMIN
 }
