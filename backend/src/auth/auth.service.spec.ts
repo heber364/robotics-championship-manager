@@ -164,7 +164,7 @@ describe('AuthService Tests', () => {
     });
   });
 
-  describe('logout', () => {
+  describe('Logout', () => {
     it('should update user hashRt to null', async () => {
       const mockUserId = 1
       jest.spyOn(mockPrismaService.user, 'updateMany').mockResolvedValueOnce({ count: 1 });

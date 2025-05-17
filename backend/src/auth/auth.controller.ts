@@ -20,14 +20,14 @@ export class AuthController {
   @Public()
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
-  async signupLocal(@Body() dto: AuthDto): Promise<Tokens> {
+  async signup(@Body() dto: AuthDto): Promise<Tokens> {
     return this.authService.signup(dto);
   }
 
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('signin')
-  async signinLocal(@Body() dto: AuthDto): Promise<Tokens> {
+  async signin(@Body() dto: AuthDto): Promise<Tokens> {
     return this.authService.signin(dto);
   }
 
