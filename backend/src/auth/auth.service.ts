@@ -87,6 +87,7 @@ export class AuthService {
       },
     });
 
+
     if (!user || !user.hashRt) {
       throw new ForbiddenException('Access denied');
     }

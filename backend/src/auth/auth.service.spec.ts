@@ -4,8 +4,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ForbiddenException } from '@nestjs/common';
-import { AuthDto } from './dto';
-import * as argon from 'argon2';
 
 describe('AuthService Tests', () => {
   let authService: AuthService;
@@ -55,15 +53,15 @@ describe('AuthService Tests', () => {
   });
 
   describe('Signup', () => {
-    const mockAuth: AuthDto = {
+    const mockAuth = {
       email: 'test@mail.com',
       password: 'pass',
     };
 
-    it('Should throw if user already exists', async () => {
+    it('should throw if user already exists', async () => {
       jest.spyOn(mockPrismaService.user, 'findUnique').mockResolvedValueOnce({ id: 1, email: mockAuth.email, });
 
-      await expect(authService.signup(mockAuth)).rejects.toThrow(ForbiddenException);
+      await expect(authService.signup(mockAuth)).rejects.toThrow(new ForbiddenException('User already exists'));
 
       expect(mockPrismaService.user.findUnique).toHaveBeenCalled();
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
@@ -102,72 +100,143 @@ describe('AuthService Tests', () => {
       });
       expect(mockJwtService.signAsync).toHaveBeenCalledTimes(2);
       expect(authService.updateRtHash).toHaveBeenCalledWith(createdUser.id, tokens.refresh_token);
-      
+
     });
   });
 
-  // describe('signin', () => {
-  //   it('should throw if user does not exist', async () => {
-  //     mockPrismaService.user.findUnique.mockResolvedValueOnce(null);
-  //     await expect(service.signin({ email: 'notfound@mail.com', password: 'pass' }))
-  //       .rejects.toThrow(ForbiddenException);
-  //   });
+  describe('Signin', () => {
+    const mockSignAuth = {
+      email: 'test@mail.com',
+      password: 'pass',
+    };
+    it('should throw if user does not exist', async () => {
+      jest.spyOn(mockPrismaService.user, 'findUnique').mockResolvedValueOnce(null);
 
-  //   it('should throw if password does not match', async () => {
-  //     mockPrismaService.user.findUnique.mockResolvedValueOnce({ id: 1, email: 'test@mail.com', hash: 'hashed' });
-  //     jest.spyOn(require('argon2'), 'verify').mockResolvedValueOnce(false);
-  //     await expect(service.signin({ email: 'test@mail.com', password: 'wrong' }))
-  //       .rejects.toThrow(ForbiddenException);
-  //   });
+      await expect(authService.signin(mockSignAuth))
+        .rejects.toThrow(new ForbiddenException('Credentials incorrect'));
 
-  //   it('should return tokens if credentials are correct', async () => {
-  //     mockPrismaService.user.findUnique.mockResolvedValueOnce({ id: 1, email: 'test@mail.com', hash: 'hashed' });
-  //     jest.spyOn(require('argon2'), 'verify').mockResolvedValueOnce(true);
-  //     mockJwtService.signAsync.mockResolvedValueOnce('access_token').mockResolvedValueOnce('refresh_token');
-  //     jest.spyOn(service, 'updateRtHash').mockResolvedValueOnce(undefined as any);
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalled();
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: {
+          email: mockSignAuth.email,
+        },
+      })
 
-  //     const tokens = await service.signin({ email: 'test@mail.com', password: 'pass' });
-  //     expect(tokens).toEqual({ access_token: 'access_token', refresh_token: 'refresh_token' });
-  //   });
-  // });
+    });
 
-  // describe('logout', () => {
-  //   it('should update user hashRt to null', async () => {
-  //     mockPrismaService.user.updateMany.mockResolvedValueOnce({ count: 1 });
-  //     const result = await service.logout(1);
-  //     expect(result).toBe(true);
-  //     expect(mockPrismaService.user.updateMany).toHaveBeenCalledWith({
-  //       where: { id: 1, hashRt: { not: null } },
-  //       data: { hashRt: null },
-  //     });
-  //   });
-  // });
+    const hashMock = 'hashed_password';
+    it('should throw if password does not match', async () => {
+      jest.spyOn(mockPrismaService.user, 'findUnique').mockResolvedValueOnce({ id: 1, email: mockSignAuth.email, hash: hashMock });
+      jest.spyOn(require('argon2'), 'verify').mockResolvedValueOnce(false);
+      await expect(authService.signin(mockSignAuth))
+        .rejects.toThrow(new ForbiddenException('Access Deinied'));
 
-  // describe('refreshToken', () => {
-  //   it('should throw if user not found', async () => {
-  //     mockPrismaService.user.findUnique.mockResolvedValueOnce(null);
-  //     await expect(service.refreshToken(1, 'rt')).rejects.toThrow(ForbiddenException);
-  //   });
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalled();
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: {
+          email: mockSignAuth.email,
+        },
+      })
+      expect(require('argon2').verify).toHaveBeenCalledWith(hashMock, mockSignAuth.password);
 
-  //   it('should throw if hashRt is missing', async () => {
-  //     mockPrismaService.user.findUnique.mockResolvedValueOnce({ id: 1, hashRt: null });
-  //     await expect(service.refreshToken(1, 'rt')).rejects.toThrow(ForbiddenException);
-  //   });
+    });
 
-  //   it('should throw if refresh token does not match', async () => {
-  //     mockPrismaService.user.findUnique.mockResolvedValueOnce({ id: 1, hashRt: 'hashed' });
-  //     jest.spyOn(require('argon2'), 'verify').mockResolvedValueOnce(false);
-  //     await expect(service.refreshToken(1, 'wrong')).rejects.toThrow(ForbiddenException);
-  //   });
+    it('should return tokens if credentials are correct', async () => {
+      jest.spyOn(mockPrismaService.user, 'findUnique').mockResolvedValueOnce({ id: 1, email: mockSignAuth.email, hash: hashMock });
+      jest.spyOn(require('argon2'), 'verify').mockResolvedValueOnce(true);
+      mockJwtService.signAsync
+        .mockResolvedValueOnce('access_token')
+        .mockResolvedValueOnce('refresh_token');
 
-  //   it('should return tokens if refresh token matches', async () => {
-  //     mockPrismaService.user.findUnique.mockResolvedValueOnce({ id: 1, email: 'test@mail.com', hashRt: 'hashed' });
-  //     jest.spyOn(require('argon2'), 'verify').mockResolvedValueOnce(true);
-  //     mockJwtService.signAsync.mockResolvedValueOnce('access_token').mockResolvedValueOnce('refresh_token');
-  //     jest.spyOn(service, 'updateRtHash').mockResolvedValueOnce(undefined as any);
+      jest.spyOn(authService, 'updateRtHash').mockResolvedValueOnce(undefined as any);
 
-  //     const tokens = await service.refreshToken(1, 'rt');
-  //     expect(tokens).toEqual({ access_token: 'access_token', refresh_token: 'refresh_token' });
-  //   });
-  // });
+      const tokens = await authService.signin(mockSignAuth);
+      expect(tokens).toEqual({ access_token: 'access_token', refresh_token: 'refresh_token' });
+
+
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { email: mockSignAuth.email }
+      });
+      expect(require('argon2').verify).toHaveBeenCalledWith(hashMock, mockSignAuth.password);
+      expect(mockJwtService.signAsync).toHaveBeenCalledTimes(2);
+      expect(authService.updateRtHash).toHaveBeenCalledWith(1, tokens.refresh_token);
+
+    });
+  });
+
+  describe('logout', () => {
+    it('should update user hashRt to null', async () => {
+      const mockUserId = 1
+      jest.spyOn(mockPrismaService.user, 'updateMany').mockResolvedValueOnce({ count: 1 });
+      const result = await authService.logout(mockUserId);
+      expect(result).toBe(true);
+
+      expect(mockPrismaService.user.updateMany).toHaveBeenCalledWith({
+        where: { id: 1, hashRt: { not: null } },
+        data: { hashRt: null },
+      });
+    });
+  });
+
+  describe('RefreshToken', () => {
+    const mockUserId = 1;
+    const mockRefreshToken = 'refresh_token';
+    it('should throw if user not found', async () => {
+      jest.spyOn(mockPrismaService.user, 'findUnique').mockResolvedValueOnce(null);
+      await expect(authService.refreshToken(mockUserId, mockRefreshToken)).rejects.toThrow(new ForbiddenException('Access denied'));
+
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledTimes(1);
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+      });
+    });
+
+    it('should throw if hashRt is missing', async () => {
+      jest.spyOn(mockPrismaService.user, 'findUnique').mockResolvedValueOnce({ id: mockUserId, hashRt: null });
+      await expect(authService.refreshToken(mockUserId, mockRefreshToken)).rejects.toThrow(new ForbiddenException('Access denied'));
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledTimes(1);
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+      });
+    });
+
+    it('should throw if refresh token does not match', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValueOnce({ id: mockUserId, hashRt: mockRefreshToken });
+      jest.spyOn(require('argon2'), 'verify').mockResolvedValueOnce(false);
+      await expect(authService.refreshToken(mockUserId, mockRefreshToken)).rejects.toThrow(ForbiddenException);
+
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledTimes(1);
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+      });
+      expect(require('argon2').verify).toHaveBeenCalledTimes(1);
+      expect(require('argon2').verify).toHaveBeenCalledWith(mockRefreshToken, mockRefreshToken);
+    });
+
+    it('should return tokens if refresh token matches', async () => {
+      const mockUserId = 1;
+      const mockEmail = 'test@mail.com';
+      const mockHashRt = 'hashed';
+      const mockRefreshToken = 'rt';
+
+      jest.spyOn(mockPrismaService.user, 'findUnique')
+        .mockResolvedValueOnce({ id: mockUserId, email: mockEmail, hashRt: mockHashRt });
+      jest.spyOn(require('argon2'), 'verify').mockResolvedValueOnce(true);
+      mockJwtService.signAsync
+        .mockResolvedValueOnce('access_token')
+        .mockResolvedValueOnce('refresh_token');
+      jest.spyOn(authService, 'updateRtHash').mockResolvedValueOnce(undefined as any);
+
+      const tokens = await authService.refreshToken(mockUserId, mockRefreshToken);
+      expect(tokens).toEqual({ access_token: 'access_token', refresh_token: 'refresh_token' });
+
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledTimes(1);
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+      });
+      expect(require('argon2').verify).toHaveBeenCalledWith(mockHashRt, mockRefreshToken);
+      expect(mockJwtService.signAsync).toHaveBeenCalledTimes(2);
+      expect(authService.updateRtHash).toHaveBeenCalledWith(mockUserId, 'refresh_token');
+    });
+  });
 });
