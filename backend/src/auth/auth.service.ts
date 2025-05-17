@@ -10,7 +10,7 @@ import { Tokens } from './types';
 import * as argon from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { EmailService } from 'src/email/email.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -186,7 +186,7 @@ export class AuthService {
     };
   }
 
-  private async clearOtpData(userId: number): Promise<void> {
+  async clearOtpData(userId: number): Promise<void> {
     await this.prismaService.user.updateMany({
       where: {
         id: userId,
@@ -199,7 +199,7 @@ export class AuthService {
     });
   }
 
-  private async generateOtpCode(userId: number): Promise<string> {
+  async generateOtpCode(userId: number): Promise<string> {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const hashOtpCode = await argon.hash(otpCode);
     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiration
@@ -217,7 +217,7 @@ export class AuthService {
     return otpCode;
   }
 
-  private async sendOtpEmail(otpCode: string, userEmail: string): Promise<void> {
+  async sendOtpEmail(otpCode: string, userEmail: string): Promise<void> {
     await this.emailService.sendEmail({
       recipients: userEmail,
       subject: 'Seu código de verificação',

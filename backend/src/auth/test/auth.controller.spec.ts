@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AuthController } from '../auth.controller';
+import { AuthService } from '../auth.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -12,6 +12,7 @@ describe('AuthController', () => {
     logout: jest.fn(),
     refreshToken: jest.fn(),
   };
+  
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -23,7 +24,6 @@ describe('AuthController', () => {
 
     controller = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
-
     jest.clearAllMocks();
   });
 
@@ -34,13 +34,13 @@ describe('AuthController', () => {
   describe('Signup', () => {
     it('should call authService.signup and return tokens', async () => {
       const dto = { email: 'test@mail.com', password: 'pass' };
-      const tokens = { access_token: 'at', refresh_token: 'rt' };
-      mockAuthService.signup.mockResolvedValueOnce(tokens);
+      const userId = 1;
+      mockAuthService.signup.mockResolvedValueOnce({userId: userId});
 
       const result = await controller.signup(dto);
 
       expect(authService.signup).toHaveBeenCalledWith(dto);
-      expect(result).toEqual(tokens);
+      expect(result).toEqual({userId: userId});
     });
   });
 
