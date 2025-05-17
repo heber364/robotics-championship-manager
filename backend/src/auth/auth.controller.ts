@@ -11,23 +11,23 @@ import { AuthDto } from './dto';
 import { Tokens } from './types';
 import { AtGuard, RtGuard } from '../common/guards';
 import { GetCurrentUser, GetCurrentUserId, Public } from '../common/decorators';
-
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
   @Public()
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
-  async signup(@Body() dto: AuthDto): Promise<Tokens> {
+  async signup(@Body() dto: AuthDto): Promise<{ userId: number }> {
     return this.authService.signup(dto);
   }
 
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('signin')
-  async signin(@Body() dto: AuthDto): Promise<Tokens> {
+  async signin(@Body() dto: AuthDto): Promise<{ userId: number }> {
     return this.authService.signin(dto);
   }
 
@@ -49,5 +49,12 @@ export class AuthController {
     refreshToken: string,
   ): Promise<Tokens> {
     return this.authService.refreshToken(userId, refreshToken);
+  }
+
+  @Public()
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  async verifyOtp(@Body() dto: VerifyOtpDto): Promise<Tokens> {
+    return this.authService.verifyOtp(dto);
   }
 }
