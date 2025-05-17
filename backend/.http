@@ -1,0 +1,26 @@
+POST http://localhost:3333/auth/signup
+Content-Type: application/json
+
+{
+  "email": "heber@gmail.com",
+  "password": "teste"
+}
+
+### Sign in
+POST http://localhost:3333/auth/signin
+Content-Type: application/json
+
+{
+  "email": "heber@gmail.com",
+  "password": "teste"
+}
+
+### Sign in
+POST http://localhost:3333/auth/logout
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsImVtYWlsIjoiaGViZXJAZ21haWwuY29tIiwiaWF0IjoxNzQ0MjQ1Mzk3LCJleHAiOjE3NDQyNDYyOTd9.yTrMKEf12tWRcEBAQhJ78sSGGLfnNyXY3QOpmOpYQh0
+
+{
+  "email": "heber@gmail.com",
+  "password": "teste"
+}
