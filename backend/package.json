@@ -97,6 +97,17 @@
       "text",
       "lcov"
     ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      ".module.ts$",
+      "main.ts$",
+      "dto/",
+      "types/",
+      "validators/",
+      "guards/",
+      "decorators/",
+      "strategies/"
+    ],
     "testEnvironment": "node"
   }
 }

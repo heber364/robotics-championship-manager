@@ -20,15 +20,23 @@ export class EmailService {
   async sendEmail(data: SendEmailDto): Promise<void> {
     const { sender, recipients, subject, html, text } = data;
 
+    const defaultSender = {
+      name: this.configService.get('MAIL_SENDER_NAME'),
+      address: this.configService.get('MAIL_SENDER_ADDRESS'),
+    };
+
+    const from = sender ?? defaultSender;
+
+    if (!from.address) {
+      throw new InternalServerErrorException('No sender address configured.');
+    }
+
     const mailOptions: SendMailOptions = {
-      from: sender ?? {
-        name: this.configService.get('MAIL_SENDER_NAME') ?? '',
-        address: this.configService.get('MAIL_SENDER_ADDRESS') ?? '',
-      },
+      from,
       to: recipients,
       subject,
-      html, 
-      text, 
+      html,
+      text,
     };
 
     try {

@@ -1,7 +1,7 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { EmailService } from './email.service';
 import { SendEmailDto } from './dto/send-email.dto';
-import { Public } from 'src/common/decorators';
+import { Public } from '../common/decorators';
 
 @Controller('email')
 export class EmailController {

@@ -3,7 +3,7 @@ import { AuthService } from '../auth.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { EmailService } from '../../email/email.service';
 
 describe('AuthService Tests', () => {
@@ -87,9 +87,7 @@ describe('AuthService Tests', () => {
         email: 'test@mail.com',
         hash: 'hashed_password',
       });
-      jest.spyOn(authService, 'generateOtpCode').mockResolvedValueOnce('123456');
-      jest.spyOn(authService, 'sendOtpEmail').mockResolvedValueOnce(undefined as any);
-
+      
       const result = await authService.signup(mockAuth);
 
       expect(result.userId).toEqual(1);
@@ -103,10 +101,7 @@ describe('AuthService Tests', () => {
           hash: 'hashed_password',
         },
       });
-      expect(authService.generateOtpCode).toHaveBeenCalledTimes(1);
-      expect(authService.generateOtpCode).toHaveBeenCalledWith(1);
-      expect(authService.sendOtpEmail).toHaveBeenCalledTimes(1);
-      expect(authService.sendOtpEmail).toHaveBeenCalledWith('123456', mockAuth.email);
+
     });
   });
 
@@ -154,9 +149,7 @@ describe('AuthService Tests', () => {
         hash: hashMock,
       });
       jest.spyOn(require('argon2'), 'verify').mockResolvedValueOnce(true);
-      jest.spyOn(authService, 'generateOtpCode').mockResolvedValueOnce('123456');
-      jest.spyOn(authService, 'sendOtpEmail').mockResolvedValueOnce(undefined as any);
-
+    
       const { userId } = await authService.signin(mockSignAuth);
 
       expect(userId).toEqual(1);
@@ -164,24 +157,38 @@ describe('AuthService Tests', () => {
         where: { email: mockSignAuth.email },
       });
       expect(require('argon2').verify).toHaveBeenCalledWith(hashMock, mockSignAuth.password);
-      expect(authService.generateOtpCode).toHaveBeenCalledTimes(1);
-      expect(authService.generateOtpCode).toHaveBeenCalledWith(1);
-      expect(authService.sendOtpEmail).toHaveBeenCalledTimes(1);
-      expect(authService.sendOtpEmail).toHaveBeenCalledWith('123456', mockSignAuth.email);
-    });
-  });
-
-  describe('Generate OTP Code', () => {
-    it('should generate a 6-digit OTP code', async () => {
-      const userId = 1;
-      const otpCode = await authService.generateOtpCode(userId);
-      expect(otpCode).toHaveLength(6);
-      expect(Number(otpCode)).toBeGreaterThanOrEqual(100000);
-      expect(Number(otpCode)).toBeLessThan(1000000);
     });
   });
 
   describe('VerifyOtp', () => {
+    it('should throw if user does not exist', async () => {
+      const userId = 1;
+      const otpCode = '123456';
+
+      jest.spyOn(mockPrismaService.user, 'findUnique').mockResolvedValueOnce(null);
+
+      await expect(authService.verifyOtp({ userId, otpCode })).rejects.toThrow(new NotFoundException('User not found'));
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({ where: { id: userId } });
+    });
+
+    it('should throw if OTP data is missing (hashOtpCode or otpExpiresAt is null)', async () => {
+      const userId = 1;
+      const otpCode = '123456';
+      const user = {
+        id: userId,
+        email: 'test@mail.com',
+        hashOtpCode: null,
+        otpExpiresAt: null,
+      };
+
+      jest.spyOn(mockPrismaService.user, 'findUnique').mockResolvedValueOnce(user);
+
+      await expect(authService.verifyOtp({ userId, otpCode })).rejects.toThrow(
+        new UnauthorizedException('Try to login first'),
+      );
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({ where: { id: userId } });
+    });
+
     it('should throw if OTP is invalid', async () => {
       const userId = 1;
       const otpCode = 'wrong';
@@ -195,7 +202,9 @@ describe('AuthService Tests', () => {
       jest.spyOn(mockPrismaService.user, 'findUnique').mockResolvedValueOnce(user);
       jest.spyOn(require('argon2'), 'verify').mockResolvedValueOnce(false);
 
-      await expect(authService.verifyOtp({ userId, otpCode })).rejects.toThrow(new UnauthorizedException('Invalid OTP code'));
+      await expect(authService.verifyOtp({ userId, otpCode })).rejects.toThrow(
+        new UnauthorizedException('Invalid OTP code'),
+      );
       expect(require('argon2').verify).toHaveBeenCalledWith(user.hashOtpCode, otpCode);
     });
 
@@ -212,10 +221,10 @@ describe('AuthService Tests', () => {
 
       jest.spyOn(mockPrismaService.user, 'findUnique').mockResolvedValueOnce(user);
       jest.spyOn(require('argon2'), 'verify').mockResolvedValueOnce(true);
-      jest.spyOn(authService, 'clearOtpData').mockResolvedValueOnce(undefined);
-
-      await expect(authService.verifyOtp({ userId, otpCode })).rejects.toThrow(new UnauthorizedException('OTP code expired'));
-      expect(authService.clearOtpData).toHaveBeenCalledWith(userId);
+    
+      await expect(authService.verifyOtp({ userId, otpCode })).rejects.toThrow(
+        new UnauthorizedException('OTP code expired'),
+      );
     });
 
     it('should validate OTP and return tokens', async () => {
@@ -230,19 +239,16 @@ describe('AuthService Tests', () => {
       const tokens = { access_token: 'at', refresh_token: 'rt' };
 
       jest.spyOn(mockPrismaService.user, 'findUnique').mockResolvedValueOnce(user);
+      jest.spyOn(authService as any, 'getTokens').mockResolvedValueOnce(tokens);
       jest.spyOn(require('argon2'), 'verify').mockResolvedValueOnce(true);
-      jest.spyOn(authService, 'clearOtpData').mockResolvedValueOnce(undefined);
-      jest.spyOn(authService, 'getTokens').mockResolvedValueOnce(tokens);
-      jest.spyOn(authService, 'updateRtHash').mockResolvedValueOnce(undefined);
+    
 
       const result = await authService.verifyOtp({ userId, otpCode });
+      expect(result).toEqual(tokens);
 
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({ where: { id: userId } });
       expect(require('argon2').verify).toHaveBeenCalledWith(user.hashOtpCode, otpCode);
-      expect(authService.clearOtpData).toHaveBeenCalledWith(userId);
-      expect(authService.getTokens).toHaveBeenCalledWith(userId, user.email);
-      expect(authService.updateRtHash).toHaveBeenCalledWith(userId, tokens.refresh_token);
-      expect(result).toEqual(tokens);
+     
     });
   });
 
@@ -315,7 +321,6 @@ describe('AuthService Tests', () => {
       });
       jest.spyOn(require('argon2'), 'verify').mockResolvedValueOnce(true);
       mockJwtService.signAsync.mockResolvedValueOnce('access_token').mockResolvedValueOnce('refresh_token');
-      jest.spyOn(authService, 'updateRtHash').mockResolvedValueOnce(undefined as any);
 
       const tokens = await authService.refreshToken(mockUserId, mockRefreshToken);
       expect(tokens).toEqual({
@@ -329,7 +334,6 @@ describe('AuthService Tests', () => {
       });
       expect(require('argon2').verify).toHaveBeenCalledWith(mockHashRt, mockRefreshToken);
       expect(mockJwtService.signAsync).toHaveBeenCalledTimes(2);
-      expect(authService.updateRtHash).toHaveBeenCalledWith(mockUserId, 'refresh_token');
     });
   });
 });

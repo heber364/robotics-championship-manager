@@ -11,6 +11,7 @@ describe('AuthController', () => {
     signin: jest.fn(),
     logout: jest.fn(),
     refreshToken: jest.fn(),
+    verifyOtp: jest.fn(),
   };
   
 
@@ -56,6 +57,19 @@ describe('AuthController', () => {
       expect(result).toEqual(tokens);
     });
   });
+
+  describe('VerifyOtp', () => {
+  it('should call authService.verifyOtp and return tokens', async () => {
+    const dto = { userId: 1, otpCode: '123456' };
+    const tokens = { access_token: 'at', refresh_token: 'rt' };
+    mockAuthService.verifyOtp = jest.fn().mockResolvedValueOnce(tokens);
+
+    const result = await controller.verifyOtp(dto);
+
+    expect(authService.verifyOtp).toHaveBeenCalledWith(dto);
+    expect(result).toEqual(tokens);
+  });
+});
 
   describe('Logout', () => {
     it('should call authService.logout and return true', async () => {
