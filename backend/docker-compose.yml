@@ -1,17 +1,58 @@
+version: '3.8'
+
 services:
+  api:
+    image: api:latest
+    ports:
+      - "3333:3000"
+    environment:
+      - PORT=3000
+    depends_on:
+      - prd-db
+    networks:
+      - app-network
+  
+  prd-db:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: prd-user
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: prd-db
+    volumes:
+      - postgres_prd_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+  
   dev-db:
     image: postgres:15
     ports:
-      - 5432:5432
+      - "5433:5432"
     environment:
       POSTGRES_USER: dev-user
       POSTGRES_PASSWORD: 123
       POSTGRES_DB: dev-db
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+  
   test-db:
-    image: postgres:13
+    image: postgres:15
     ports:
-      - 5433:5432
+      - "5434:5432"
     environment:
       POSTGRES_USER: test-user
       POSTGRES_PASSWORD: 123
       POSTGRES_DB: test-db
+    networks:
+      - app-network
+
+volumes:
+  postgres_prd_data:
+  postgres_dev_data:
+
+networks:
+  app-network:
+    driver: bridge
