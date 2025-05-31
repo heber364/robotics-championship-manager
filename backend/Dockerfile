@@ -4,8 +4,6 @@ WORKDIR /usr/src/app
 
 COPY . .
 
-COPY ./.env.production ./.env
-
 RUN yarn --quiet --no-optional --no-fund --loglevel=error
 
 RUN yarn build
