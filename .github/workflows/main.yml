@@ -8,8 +8,8 @@ on:
       - main
 
 jobs:
-  build:
-    name: Build Application
+  build_source_artifact:
+    name: Build Source Artifact
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -20,32 +20,30 @@ jobs:
         with:
           node-version: 20
 
-      - name: Cache Yarn dependencies
+      - name: Cache Yarn node_modules
         uses: actions/cache@v4
         with:
           path: backend/node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('backend/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-nodemodules-${{ hashFiles('backend/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-yarn-nodemodules-
 
-      - name: Install dependencies
+      - name: Install dependencies (populates cache, validates lockfile)
         run: yarn install --frozen-lockfile
         working-directory: backend
 
-      - name: Generate Prisma Client
-        run: yarn prisma generate
-        working-directory: backend
-
-      - name: Upload backend artifact
+      - name: Upload backend source artifact (excluding node_modules)
         uses: actions/upload-artifact@v4
         with:
-          name: backend-contents
-          path: backend/
+          name: backend-source-files
+          path: |
+            backend/
+            !backend/node_modules/
 
   unit_tests:
     name: Unit Tests
     runs-on: ubuntu-latest
-    needs: build
+    needs: build_source_artifact
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -58,11 +56,27 @@ jobs:
       - name: Create backend directory
         run: mkdir -p backend
 
-      - name: Download backend artifact
+      - name: Download backend source artifact
         uses: actions/download-artifact@v4
         with:
-          name: backend-contents
+          name: backend-source-files
           path: backend/
+
+      - name: Cache Yarn node_modules
+        uses: actions/cache@v4
+        with:
+          path: backend/node_modules
+          key: ${{ runner.os }}-yarn-nodemodules-${{ hashFiles('backend/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-nodemodules-
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        working-directory: backend
+
+      - name: Generate Prisma Client for Unit Tests
+        run: yarn prisma generate
+        working-directory: backend
 
       - name: Run unit tests
         run: yarn test
@@ -71,7 +85,7 @@ jobs:
   e2e_tests:
     name: E2E Tests
     runs-on: ubuntu-latest
-    needs: build
+    needs: build_source_artifact
     services:
       postgres:
         image: postgres:15
@@ -109,11 +123,27 @@ jobs:
       - name: Create backend directory
         run: mkdir -p backend
 
-      - name: Download backend artifact
+      - name: Download backend source artifact
         uses: actions/download-artifact@v4
         with:
-          name: backend-contents
+          name: backend-source-files
           path: backend/
+
+      - name: Cache Yarn node_modules
+        uses: actions/cache@v4
+        with:
+          path: backend/node_modules
+          key: ${{ runner.os }}-yarn-nodemodules-${{ hashFiles('backend/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-nodemodules-
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        working-directory: backend
+
+      - name: Generate Prisma Client for E2E Tests
+        run: yarn prisma generate
+        working-directory: backend
 
       - name: Run migrations for e2e tests
         run: yarn prisma migrate deploy
