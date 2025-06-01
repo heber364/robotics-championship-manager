@@ -1,0 +1,154 @@
+name: CI - Testes PR
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - staging
+      - main
+
+jobs:
+  build_source_artifact:
+    name: Build Source Artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache Yarn node_modules
+        uses: actions/cache@v4
+        with:
+          path: backend/node_modules
+          key: ${{ runner.os }}-yarn-nodemodules-${{ hashFiles('backend/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-nodemodules-
+
+      - name: Install dependencies (populates cache, validates lockfile)
+        run: yarn install --frozen-lockfile
+        working-directory: backend
+
+      - name: Upload backend source artifact (excluding node_modules)
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-source-files
+          path: |
+            backend/
+            !backend/node_modules/
+
+  unit_tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: build_source_artifact
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Create backend directory
+        run: mkdir -p backend
+
+      - name: Download backend source artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-source-files
+          path: backend/
+
+      - name: Cache Yarn node_modules
+        uses: actions/cache@v4
+        with:
+          path: backend/node_modules
+          key: ${{ runner.os }}-yarn-nodemodules-${{ hashFiles('backend/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-nodemodules-
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        working-directory: backend
+
+      - name: Generate Prisma Client for Unit Tests
+        run: yarn prisma generate
+        working-directory: backend
+
+      - name: Run unit tests
+        run: yarn test
+        working-directory: backend
+
+  e2e_tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: build_source_artifact
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test-user
+          POSTGRES_PASSWORD: 123
+          POSTGRES_DB: test-db-e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test-user -d test-db-e2e"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql://test-user:123@localhost:5432/test-db-e2e
+      AT_SECRET: at_secret
+      RT_SECRET: rt_secret
+      AT_EXPIRATION_TIME: 15m
+      RT_EXPIRATION_TIME: 7d
+      MAIL_SENDER_NAME: "CI E2E Tests"
+      MAIL_SENDER_ADDRESS: "ci-e2e@example.com"
+      MAIL_SERVICE: "gmail"
+      MAIL_USER: "ci-e2e@example.com"
+      MAIL_PASSWORD: "dummy_password"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Create backend directory
+        run: mkdir -p backend
+
+      - name: Download backend source artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-source-files
+          path: backend/
+
+      - name: Cache Yarn node_modules
+        uses: actions/cache@v4
+        with:
+          path: backend/node_modules
+          key: ${{ runner.os }}-yarn-nodemodules-${{ hashFiles('backend/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-nodemodules-
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        working-directory: backend
+
+      - name: Generate Prisma Client for E2E Tests
+        run: yarn prisma generate
+        working-directory: backend
+
+      - name: Run migrations for e2e tests
+        run: yarn prisma migrate deploy
+        working-directory: backend
+
+      - name: Run e2e tests
+        run: yarn test:e2e
+        working-directory: backend
