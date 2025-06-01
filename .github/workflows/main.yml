@@ -1,0 +1,68 @@
+name: CI - Testes PR
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - staging
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test-user
+          POSTGRES_PASSWORD: 123
+          POSTGRES_DB: test-db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test-user -d test-db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE_URL: postgresql://test-user:123@localhost:5432/test-db
+      AT_SECRET: at_secret
+      RT_SECRET: rt_secret
+      AT_EXPIRATION_TIME: 15m
+      RT_EXPIRATION_TIME: 7d
+      MAIL_SENDER_NAME: "CI"
+      MAIL_SENDER_ADDRESS: "ci@example.com"
+      MAIL_SERVICE: "gmail"
+      MAIL_USER: "ci@example.com"
+      MAIL_PASSWORD: "dummy"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        working-directory: backend
+
+      - name: Generate Prisma Client
+        run: yarn prisma generate
+        working-directory: backend
+
+      - name: Run migrations
+        run: yarn prisma migrate deploy
+        working-directory: backend
+
+      - name: Run unit tests
+        run: yarn test
+        working-directory: backend
+
+      - name: Run e2e tests
+        run: yarn test:e2e
+        working-directory: backend
