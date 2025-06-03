@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto';
 import { Tokens } from './types';
@@ -6,6 +11,8 @@ import * as argon from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ChangePasswordDto } from './dto/change-password';
 
 @Injectable()
 export class AuthService {
@@ -66,7 +73,7 @@ export class AuthService {
     return { userId: user.id };
   }
 
-  async verifyOtp(dto: { userId: number; otpCode: string }): Promise<Tokens> {
+  async verifyOtp(dto: VerifyOtpDto): Promise<Tokens> {
     const user = await this.prismaService.user.findUnique({
       where: {
         id: dto.userId,
@@ -136,6 +143,36 @@ export class AuthService {
     const tokens = await this.getTokens(user.id, user.email);
     await this.updateRtHash(user.id, tokens.refresh_token);
     return tokens;
+  }
+
+  async changePassword(
+    userId: number,
+    { oldPassword, newPassword }: ChangePasswordDto,
+  ): Promise<void> {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const passwordMatches = await argon.verify(user.hash, oldPassword);
+
+    if (!passwordMatches) {
+      throw new UnauthorizedException('Old password is incorrect');
+    }
+    const newHash = await argon.hash(newPassword);
+    await this.prismaService.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        hash: newHash,
+      },
+    });
   }
 
   private async generateOtpCode(userId: number): Promise<string> {

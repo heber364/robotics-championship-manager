@@ -1,4 +1,4 @@
-name: CI - Testes PR
+name: CI/CD Pipeline
 
 on:
   pull_request:

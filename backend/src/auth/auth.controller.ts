@@ -1,11 +1,13 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto';
 import { Tokens } from './types';
 import { AtGuard, RtGuard } from '../common/guards';
 import { GetCurrentUser, GetCurrentUserId, Public } from '../common/decorators';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { ApiResponse } from '@nestjs/swagger';
+import { ApiHeaders, ApiResponse } from '@nestjs/swagger';
+import { ChangePasswordDto } from './dto/change-password';
+
 
 @Controller('auth')
 export class AuthController {
@@ -88,5 +90,25 @@ export class AuthController {
     refreshToken: string,
   ): Promise<Tokens> {
     return this.authService.refreshToken(userId, refreshToken);
+  }
+
+   
+  
+  @ApiResponse({
+    status: 200,
+    description: 'Password changed successfully',
+  })
+  @UseGuards(AtGuard)
+  @Patch('change-password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @GetCurrentUserId() userId: number,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<void> {
+    console.log('Changing password for userId:', userId);
+    return this.authService.changePassword(
+      userId,
+      dto,
+    );
   }
 }

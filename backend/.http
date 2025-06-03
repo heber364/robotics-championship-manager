@@ -1,4 +1,4 @@
-POST http://localhost:3333/auth/signup
+POST http://localhost:3000/auth/signup
 Content-Type: application/json
 
 {
@@ -7,7 +7,7 @@ Content-Type: application/json
 }
 
 ### Sign in
-POST http://localhost:3333/auth/signin
+POST http://localhost:3000/auth/signin
 Content-Type: application/json
 
 {
@@ -16,7 +16,7 @@ Content-Type: application/json
 }
 
 ### Verify email
-POST http://localhost:3333/auth/verify-email
+POST http://localhost:3000/auth/verify-email
 Content-Type: application/json
 
 {
@@ -25,7 +25,7 @@ Content-Type: application/json
 }
 
 ### Logout
-POST http://localhost:3333/auth/logout
+POST http://localhost:3000/auth/logout
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsImVtYWlsIjoiaGViZXJAZ21haWwuY29tIiwiaWF0IjoxNzQ0MjQ1Mzk3LCJleHAiOjE3NDQyNDYyOTd9.yTrMKEf12tWRcEBAQhJ78sSGGLfnNyXY3QOpmOpYQh0
 
@@ -34,16 +34,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsImVtYWlsI
   "password": "teste"
 }
 
-### Send email
-POST http://localhost:3333/email/send
+### Change password
+PATCH  http://localhost:3000/auth/change-password
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoiaGViZXJsaW1hc2lsdmFAZ21haWwuY29tIiwiaWF0IjoxNzQ4OTEzODY3LCJleHAiOjE3NDg5MTQ3Njd9.yUSHtohriNbnN79oFKU-zSR_BatDcsNmTiQrSLO0938
 
 {
-  "recipients": [{
-    "name": "Heber Lima",
-    "address": "heberlimasilva@gmail.com"
-  }],
-  "subject": "Assunto do email: Testando envio de email via NestJS",
-  "text": "Mensagem em texto simples",
-  "html": "<b>Hello world</b>"
+  "oldPassword": "acht1234",
+  "newPassword": "acht12345"
 }
