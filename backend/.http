@@ -12,7 +12,7 @@ Content-Type: application/json
 
 {
   "email": "heberlimasilva@gmail.com",
-  "password": "teste"
+  "password": "ararared555"
 }
 
 ### Verify email
@@ -21,7 +21,7 @@ Content-Type: application/json
 
 {
   "userId": 1,
-  "otpCode": "501307"
+  "otpCode": "361488"
 }
 
 ### Logout
@@ -42,4 +42,22 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsI
 {
   "oldPassword": "acht1234",
   "newPassword": "acht12345"
+}
+
+
+### Forgot password
+POST  http://localhost:3000/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "heberlimasilva@gmail.com"
+}
+
+### Reset password
+PATCH   http://localhost:3000/auth/reset-password
+Content-Type: application/json
+
+{
+  "newPassword": "ararared555",
+  "hashOtpCode": "$argon2id$v=19$m=65536,t=3,p=4$OvoOQ0JT7er7y0s6DxJm8g$6fxnRbOQHKRHWNwrIIcJIeTJW1tay1rWWQSPeN0iDls"
 }

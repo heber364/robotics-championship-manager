@@ -13,6 +13,8 @@ import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ChangePasswordDto } from './dto/change-password';
+import { ForgotPasswordDto } from './dto/forgot-password';
+import { ResetPasswordDto } from './dto/reset-password';
 
 @Injectable()
 export class AuthService {
@@ -42,9 +44,9 @@ export class AuthService {
       },
     });
 
-    const otpCode = await this.generateOtpCode(newUser.id);
+    const { otpCode } = await this.generateOtpCode(newUser.id);
 
-    await this.sendOtpEmail(otpCode, newUser.email);
+    await this.sendOtpCodeToEmail(otpCode, newUser.email);
 
     return { userId: newUser.id };
   }
@@ -66,9 +68,9 @@ export class AuthService {
       throw new ForbiddenException('Access Deinied');
     }
 
-    const otpCode = await this.generateOtpCode(user.id);
+    const { otpCode } = await this.generateOtpCode(user.id);
 
-    await this.sendOtpEmail(otpCode, user.email);
+    await this.sendOtpCodeToEmail(otpCode, user.email);
 
     return { userId: user.id };
   }
@@ -175,7 +177,51 @@ export class AuthService {
     });
   }
 
-  private async generateOtpCode(userId: number): Promise<string> {
+  async forgotPassword({ email }: ForgotPasswordDto): Promise<void> {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        email: email,
+      },
+    });
+
+    if (!user) {
+      throw new ForbiddenException('Credentials incorrect');
+    }
+
+    const { hashOtpCode } = await this.generateOtpCode(user.id);
+
+    await this.sendHashOtpCodeToEmail(hashOtpCode, user.email);
+  }
+
+  async resetPassword({ hashOtpCode, newPassword }: ResetPasswordDto): Promise<void> {
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        hashOtpCode: hashOtpCode,
+        otpExpiresAt: {
+          gte: new Date(), 
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired OTP code');
+    }
+
+    const newHash = await argon.hash(newPassword);
+
+    await this.prismaService.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        hash: newHash,
+        hashOtpCode: null,
+        otpExpiresAt: null,
+      },
+    });
+  }
+
+  private async generateOtpCode(userId: number): Promise<{ otpCode: string; hashOtpCode: string }> {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const hashOtpCode = await argon.hash(otpCode);
     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiration
@@ -190,10 +236,10 @@ export class AuthService {
       },
     });
 
-    return otpCode;
+    return { otpCode, hashOtpCode };
   }
 
-  private async sendOtpEmail(otpCode: string, userEmail: string): Promise<void> {
+  private async sendOtpCodeToEmail(otpCode: string, userEmail: string): Promise<void> {
     await this.emailService.sendEmail({
       recipients: userEmail,
       subject: 'Seu código de verificação',
@@ -206,6 +252,26 @@ export class AuthService {
             ${otpCode}
           </div>
           <p>O código expira em 5 minutos.</p>
+          <p>Se você não solicitou este código, ignore este email.</p>
+        </div>
+      `,
+    });
+  }
+
+  private async sendHashOtpCodeToEmail(hashOtpCode: string, userEmail: string): Promise<void> {
+    const resetLink = `${this.config.get('FRONTEND_URL')}/reset-password?token=${hashOtpCode}`;
+
+    await this.emailService.sendEmail({
+      recipients: userEmail,
+      subject: 'Seu código de verificação',
+      text: `Reset de senha`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 400px;">
+          <h2>Verificação de Login</h2>
+          <p>Use o link abaixo para resetar sua senha:</p>
+          <p><a href="${resetLink}">${resetLink}</a></p>            
+          
+          <p>O link expira em 5 minutos.</p>
           <p>Se você não solicitou este código, ignore este email.</p>
         </div>
       `,

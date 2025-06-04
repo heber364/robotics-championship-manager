@@ -5,10 +5,12 @@ import { Tokens } from './types';
 import { AtGuard, RtGuard } from '../common/guards';
 import { GetCurrentUser, GetCurrentUserId, Public } from '../common/decorators';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { ApiHeaders, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { ChangePasswordDto } from './dto/change-password';
+import { ForgotPasswordDto } from './dto/forgot-password';
+import { ResetPasswordDto } from './dto/reset-password';
 
-
+@ApiBearerAuth()
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -92,8 +94,6 @@ export class AuthController {
     return this.authService.refreshToken(userId, refreshToken);
   }
 
-   
-  
   @ApiResponse({
     status: 200,
     description: 'Password changed successfully',
@@ -105,10 +105,28 @@ export class AuthController {
     @GetCurrentUserId() userId: number,
     @Body() dto: ChangePasswordDto,
   ): Promise<void> {
-    console.log('Changing password for userId:', userId);
-    return this.authService.changePassword(
-      userId,
-      dto,
-    );
+    return this.authService.changePassword(userId, dto);
+  }
+
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset code sent successfully',
+  })
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<void> {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset successfully',
+  })
+  @Public()
+  @Patch('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
+    return this.authService.resetPassword(dto);
   }
 }
