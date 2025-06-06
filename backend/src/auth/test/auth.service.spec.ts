@@ -64,6 +64,7 @@ describe('AuthService Tests', () => {
 
   describe('Signup', () => {
     const mockAuth = {
+      name: 'Test User',
       email: 'test@mail.com',
       password: 'pass',
     };
@@ -112,6 +113,7 @@ describe('AuthService Tests', () => {
 
   describe('Signin', () => {
     const mockSignAuth = {
+      name: 'Test User',
       email: 'test@mail.com',
       password: 'pass',
     };
