@@ -43,7 +43,7 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('signin')
-  async signin(@Body() dto: AuthDto): Promise<{ userId: number }> {
+  async signin(@Body() dto: AuthDto): Promise<Tokens> {
     return this.authService.signin(dto);
   }
 

@@ -51,7 +51,7 @@ export class AuthService {
     return { userId: newUser.id };
   }
 
-  async signin(dto: AuthDto): Promise<{ userId: number }> {
+  async signin(dto: AuthDto): Promise<Tokens> {
     const user = await this.prismaService.user.findUnique({
       where: {
         email: dto.email,
@@ -68,11 +68,9 @@ export class AuthService {
       throw new ForbiddenException('Access Deinied');
     }
 
-    const { otpCode } = await this.generateOtpCode(user.id);
-
-    await this.sendOtpCodeToEmail(otpCode, user.email);
-
-    return { userId: user.id };
+    const tokens = await this.getTokens(user.id, user.email);
+    await this.updateRtHash(user.id, tokens.refresh_token);
+    return tokens;
   }
 
   async verifyOtp(dto: VerifyOtpDto): Promise<Tokens> {
@@ -198,7 +196,7 @@ export class AuthService {
       where: {
         hashOtpCode: hashOtpCode,
         otpExpiresAt: {
-          gte: new Date(), 
+          gte: new Date(),
         },
       },
     });
