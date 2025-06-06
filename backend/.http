@@ -1,4 +1,4 @@
-POST http://localhost:3333/auth/signup
+POST http://localhost:3000/auth/signup
 Content-Type: application/json
 
 {
@@ -7,25 +7,25 @@ Content-Type: application/json
 }
 
 ### Sign in
-POST http://localhost:3333/auth/signin
+POST http://localhost:3000/auth/signin
 Content-Type: application/json
 
 {
   "email": "heberlimasilva@gmail.com",
-  "password": "teste"
+  "password": "ararared555"
 }
 
 ### Verify email
-POST http://localhost:3333/auth/verify-email
+POST http://localhost:3000/auth/verify-email
 Content-Type: application/json
 
 {
   "userId": 1,
-  "otpCode": "501307"
+  "otpCode": "361488"
 }
 
 ### Logout
-POST http://localhost:3333/auth/logout
+POST http://localhost:3000/auth/logout
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsImVtYWlsIjoiaGViZXJAZ21haWwuY29tIiwiaWF0IjoxNzQ0MjQ1Mzk3LCJleHAiOjE3NDQyNDYyOTd9.yTrMKEf12tWRcEBAQhJ78sSGGLfnNyXY3QOpmOpYQh0
 
@@ -34,16 +34,30 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsImVtYWlsI
   "password": "teste"
 }
 
-### Send email
-POST http://localhost:3333/email/send
+### Change password
+PATCH  http://localhost:3000/auth/change-password
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoiaGViZXJsaW1hc2lsdmFAZ21haWwuY29tIiwiaWF0IjoxNzQ4OTEzODY3LCJleHAiOjE3NDg5MTQ3Njd9.yUSHtohriNbnN79oFKU-zSR_BatDcsNmTiQrSLO0938
+
+{
+  "oldPassword": "acht1234",
+  "newPassword": "acht12345"
+}
+
+
+### Forgot password
+POST  http://localhost:3000/auth/forgot-password
 Content-Type: application/json
 
 {
-  "recipients": [{
-    "name": "Heber Lima",
-    "address": "heberlimasilva@gmail.com"
-  }],
-  "subject": "Assunto do email: Testando envio de email via NestJS",
-  "text": "Mensagem em texto simples",
-  "html": "<b>Hello world</b>"
+  "email": "heberlimasilva@gmail.com"
+}
+
+### Reset password
+PATCH   http://localhost:3000/auth/reset-password
+Content-Type: application/json
+
+{
+  "newPassword": "ararared555",
+  "hashOtpCode": "$argon2id$v=19$m=65536,t=3,p=4$OvoOQ0JT7er7y0s6DxJm8g$6fxnRbOQHKRHWNwrIIcJIeTJW1tay1rWWQSPeN0iDls"
 }
