@@ -1,34 +1,43 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { TeamService } from './team.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
+import { Public } from '../common/decorators/public.decorator';
+import { TeamEntity } from './entities/team.entity';
+import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 
+@Public()
 @Controller('team')
 export class TeamController {
   constructor(private readonly teamService: TeamService) {}
 
   @Post()
+  @ApiCreatedResponse({ type: TeamEntity })
   create(@Body() createTeamDto: CreateTeamDto) {
     return this.teamService.create(createTeamDto);
   }
 
   @Get()
+  @ApiOkResponse({ type: TeamEntity, isArray: true })
   findAll() {
     return this.teamService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.teamService.findOne(+id);
+  @ApiOkResponse({ type: TeamEntity })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.teamService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTeamDto: UpdateTeamDto) {
-    return this.teamService.update(+id, updateTeamDto);
+  @ApiOkResponse({ type: TeamEntity })
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateTeamDto: UpdateTeamDto) {
+    return this.teamService.update(id, updateTeamDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.teamService.remove(+id);
+  @ApiOkResponse({ type: Boolean })
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.teamService.remove(id);
   }
 }

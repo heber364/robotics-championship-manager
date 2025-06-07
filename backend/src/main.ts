@@ -9,7 +9,11 @@ async function bootstrap() {
   const config = createSwaggerConfig()
 
   const documentFactory = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, documentFactory);
+  SwaggerModule.setup('api', app, documentFactory, {
+    swaggerOptions: {
+      defaultModelsExpandDepth: -1
+    }
+  });
 
   app.useGlobalPipes(new ValidationPipe({}));
   await app.listen(process.env.PORT ?? 3333);
