@@ -5,16 +5,19 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthDto } from './dto';
+import {
+  SignInDto,
+  SignUpDto,
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  VerifyOtpDto,
+} from './dto';
 import { Tokens } from './types';
 import * as argon from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { ChangePasswordDto } from './dto/change-password';
-import { ForgotPasswordDto } from './dto/forgot-password';
-import { ResetPasswordDto } from './dto/reset-password';
 
 @Injectable()
 export class AuthService {
@@ -25,22 +28,22 @@ export class AuthService {
     private emailService: EmailService,
   ) {}
 
-  async signup(dto: AuthDto): Promise<{ userId: number }> {
+  async signup(signUpDto: SignUpDto): Promise<{ userId: number }> {
     const existingUser = await this.prismaService.user.findUnique({
       where: {
-        email: dto.email,
+        email: signUpDto.email,
       },
     });
 
     if (existingUser) {
       throw new ForbiddenException('User already exists');
     }
-    const hash = await argon.hash(dto.password);
+    const hash = await argon.hash(signUpDto.password);
 
     const newUser = await this.prismaService.user.create({
       data: {
-        name: dto.name,
-        email: dto.email,
+        name: signUpDto.name,
+        email: signUpDto.email,
         hash,
       },
     });
@@ -52,10 +55,10 @@ export class AuthService {
     return { userId: newUser.id };
   }
 
-  async signin(dto: AuthDto): Promise<Tokens> {
+  async signin(SignInDto: SignInDto): Promise<Tokens> {
     const user = await this.prismaService.user.findUnique({
       where: {
-        email: dto.email,
+        email: SignInDto.email,
       },
     });
 
@@ -63,7 +66,7 @@ export class AuthService {
       throw new ForbiddenException('Credentials incorrect');
     }
 
-    const passwordMatches = await argon.verify(user.hash, dto.password);
+    const passwordMatches = await argon.verify(user.hash, SignInDto.password);
 
     if (!passwordMatches) {
       throw new ForbiddenException('Access Deinied');
@@ -74,10 +77,10 @@ export class AuthService {
     return tokens;
   }
 
-  async verifyOtp(dto: VerifyOtpDto): Promise<Tokens> {
+  async verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<Tokens> {
     const user = await this.prismaService.user.findUnique({
       where: {
-        id: dto.userId,
+        id: verifyOtpDto.userId,
       },
     });
 
@@ -89,7 +92,7 @@ export class AuthService {
       throw new UnauthorizedException('Try to login first');
     }
 
-    const isOtpValid = await argon.verify(user.hashOtpCode, dto.otpCode);
+    const isOtpValid = await argon.verify(user.hashOtpCode, verifyOtpDto.otpCode);
 
     if (!isOtpValid) {
       throw new UnauthorizedException('Invalid OTP code');

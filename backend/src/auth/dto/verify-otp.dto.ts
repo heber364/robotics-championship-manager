@@ -8,25 +8,15 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 
 export class VerifyOtpDto {
-  @ApiProperty({
-    description: 'User ID',
-    example: 1,
-    required: true,
-    type: 'number',
-  })
   @IsInt()
   @IsNotEmpty()
+  @ApiProperty()
   userId: number;
 
-  @ApiProperty({
-    description: 'OTP code',
-    example: '123456',
-    required: true,
-    type: 'string',
-  })
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
   @MaxLength(6)
+  @ApiProperty()
   otpCode: string;
 }
