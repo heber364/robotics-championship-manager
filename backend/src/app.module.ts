@@ -6,10 +6,11 @@ import { EmailModule } from './email/email.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CategoryModule } from './category/category.module';
 import { TeamModule } from './team/team.module';
+import { ArenaModule } from './arena/arena.module';
 
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, EmailModule, PrismaModule, CategoryModule, TeamModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, EmailModule, PrismaModule, CategoryModule, TeamModule, ArenaModule],
   providers: [
     {
       provide: 'APP_GUARD',
