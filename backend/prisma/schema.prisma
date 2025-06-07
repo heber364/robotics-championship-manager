@@ -45,26 +45,21 @@ model Category {
 }
 
 model Arena {
-  id        Int      @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
+  name        String
+  youtubeLink String   @map("youtube_link")
+  idCategory  Int      @map("id_category")
+  category    Category @relation(fields: [idCategory], references: [id])
+  Match       Match[]
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  name        String
-  description String
-  scoreRules  String @map("score_rules")
-
-  idCategory Int      @map("id_category")
-  category   Category @relation(fields: [idCategory], references: [id])
-  matches    Match[]
 
   @@map("arenas")
 }
 
 model Team {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  id         Int            @id @default(autoincrement())
   name       String
   robotName  String         @map("robot_name")
   idCategory Int            @map("id_category")
@@ -73,14 +68,14 @@ model Team {
   matchesB   Match[]        @relation("TeamBMatches")
   users      UsersOnTeams[]
 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@map("teams")
 }
 
 model Match {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  id          Int          @id @default(autoincrement())
   idTeamA     Int          @map("id_team_a")
   teamA       Team         @relation("TeamAMatches", fields: [idTeamA], references: [id])
   idTeamB     Int          @map("id_team_b")
@@ -91,6 +86,9 @@ model Match {
   status      String
   observation String?
   matchResult MatchResult? @map("match_result")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("matches")
 }
