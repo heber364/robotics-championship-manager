@@ -8,7 +8,6 @@ import { EmailService } from './../email/email.service';
 
 describe('AuthService Tests', () => {
   let authService: AuthService;
-  let emailService: EmailService;
 
   const mockPrismaService = {
     user: {
@@ -52,7 +51,6 @@ describe('AuthService Tests', () => {
     }).compile();
 
     authService = module.get<AuthService>(AuthService);
-    emailService = module.get<EmailService>(EmailService);
 
     jest.clearAllMocks();
   });
@@ -104,7 +102,7 @@ describe('AuthService Tests', () => {
       expect(require('argon2').hash).toHaveBeenCalledWith(mockAuth.password);
       expect(mockPrismaService.user.create).toHaveBeenCalledWith({
         data: {
-          name: 'Test User',
+          name: mockAuth.name,
           email: mockAuth.email,
           hash: 'hashed_password',
         },

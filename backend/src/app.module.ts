@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { CategoryModule } from './category/category.module';
 import { TeamModule } from './team/team.module';
 
+
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, EmailModule, PrismaModule, CategoryModule, TeamModule],
   providers: [
