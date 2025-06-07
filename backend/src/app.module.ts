@@ -4,9 +4,10 @@ import { AuthModule } from './auth/auth.module';
 import { AtGuard } from './common/guards';
 import { EmailModule } from './email/email.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { CategoryModule } from './category/category.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, EmailModule, PrismaModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, EmailModule, PrismaModule, CategoryModule],
   providers: [
     {
       provide: 'APP_GUARD',
