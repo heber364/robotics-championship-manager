@@ -14,7 +14,6 @@ import { GetCurrentUser, GetCurrentUserId, Public } from '../common/decorators';
 
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 
-@ApiBearerAuth()
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -46,6 +45,7 @@ export class AuthController {
   @Post('logout')
   @UseGuards(AtGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
   @ApiOkResponse()
   async logout(@GetCurrentUserId() userId: number): Promise<boolean> {
     return this.authService.logout(userId);
@@ -67,6 +67,7 @@ export class AuthController {
   @Patch('change-password')
   @UseGuards(AtGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
   @ApiOkResponse()
   async changePassword(
     @GetCurrentUserId() userId: number,
