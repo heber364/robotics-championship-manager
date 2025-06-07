@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from '../auth.service';
-import { PrismaService } from '../../prisma/prisma.service';
+import { AuthService } from './auth.service';
+import { PrismaService } from './../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { EmailService } from '../../email/email.service';
-
+import { EmailService } from './../email/email.service';
 
 describe('AuthService Tests', () => {
   let authService: AuthService;
@@ -91,7 +90,7 @@ describe('AuthService Tests', () => {
       jest.spyOn(require('argon2'), 'hash').mockResolvedValueOnce('hashed_password');
       jest.spyOn(mockPrismaService.user, 'create').mockResolvedValueOnce({
         id: 1,
-        name: "Test User",
+        name: 'Test User',
         email: 'test@mail.com',
         hash: 'hashed_password',
       });
@@ -105,7 +104,7 @@ describe('AuthService Tests', () => {
       expect(require('argon2').hash).toHaveBeenCalledWith(mockAuth.password);
       expect(mockPrismaService.user.create).toHaveBeenCalledWith({
         data: {
-          name: "Test User",
+          name: 'Test User',
           email: mockAuth.email,
           hash: 'hashed_password',
         },
@@ -458,6 +457,7 @@ describe('AuthService Tests', () => {
   });
 
   describe('ResetPassword', () => {
+
     const mockResetPasswordDto = {
       hashOtpCode: 'hashedOtp',
       newPassword: 'newPass',
@@ -472,23 +472,27 @@ describe('AuthService Tests', () => {
       expect(mockPrismaService.user.findFirst).toHaveBeenCalledWith({
         where: {
           hashOtpCode: mockResetPasswordDto.hashOtpCode,
-          otpExpiresAt: { gte: new Date() },
+          otpExpiresAt: { gte: new Date },
         },
       });
     });
     it('should reset password successfully', async () => {
       const mockUser = {
         id: 1,
-      }
-      jest.spyOn(mockPrismaService.user, 'findFirst').mockResolvedValueOnce(mockUser);
+      };
+      const fixedDate = new Date('2025-06-07T16:10:52.252Z');
+
+      jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
+      mockPrismaService.user.findFirst.mockResolvedValueOnce(mockUser);
       jest.spyOn(require('argon2'), 'hash').mockResolvedValueOnce('new_hashed_password');
 
       await authService.resetPassword(mockResetPasswordDto);
+
       expect(mockPrismaService.user.findFirst).toHaveBeenCalledWith({
         where: {
           hashOtpCode: mockResetPasswordDto.hashOtpCode,
-          otpExpiresAt: { gte: new Date() },
-        }, 
+          otpExpiresAt: { gte: fixedDate },
+        },
       });
       expect(require('argon2').hash).toHaveBeenCalledWith(mockResetPasswordDto.newPassword);
       expect(mockPrismaService.user.update).toHaveBeenCalledWith({
@@ -499,6 +503,6 @@ describe('AuthService Tests', () => {
           otpExpiresAt: null,
         },
       });
-    })
+    });
   });
 });
