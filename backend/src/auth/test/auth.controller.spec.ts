@@ -34,7 +34,7 @@ describe('AuthController', () => {
 
   describe('Signup', () => {
     it('should call authService.signup and return tokens', async () => {
-      const dto = { email: 'test@mail.com', password: 'pass' };
+      const dto = { name: "Test name", email: 'test@mail.com', password: 'pass' };
       const userId = 1;
       mockAuthService.signup.mockResolvedValueOnce({userId: userId});
 
@@ -47,7 +47,7 @@ describe('AuthController', () => {
 
   describe('Signin', () => {
     it('should call authService.signin and return tokens', async () => {
-      const dto = { email: 'test@mail.com', password: 'pass' };
+      const dto = {  name: "Test name", email: 'test@mail.com', password: 'pass' };
       const tokens = { access_token: 'at', refresh_token: 'rt' };
       mockAuthService.signin.mockResolvedValueOnce(tokens);
 
