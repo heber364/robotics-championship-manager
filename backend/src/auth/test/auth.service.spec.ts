@@ -5,11 +5,9 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { EmailService } from '../../email/email.service';
-import { find } from 'rxjs';
 
 describe('AuthService Tests', () => {
   let authService: AuthService;
-  let emailService: EmailService;
 
   const mockPrismaService = {
     user: {
@@ -53,7 +51,6 @@ describe('AuthService Tests', () => {
     }).compile();
 
     authService = module.get<AuthService>(AuthService);
-    emailService = module.get<EmailService>(EmailService);
 
     jest.clearAllMocks();
   });
@@ -91,6 +88,7 @@ describe('AuthService Tests', () => {
       jest.spyOn(require('argon2'), 'hash').mockResolvedValueOnce('hashed_password');
       jest.spyOn(mockPrismaService.user, 'create').mockResolvedValueOnce({
         id: 1,
+        name: "Test User",
         email: 'test@mail.com',
         hash: 'hashed_password',
       });
@@ -104,6 +102,7 @@ describe('AuthService Tests', () => {
       expect(require('argon2').hash).toHaveBeenCalledWith(mockAuth.password);
       expect(mockPrismaService.user.create).toHaveBeenCalledWith({
         data: {
+          name: mockAuth.name,
           email: mockAuth.email,
           hash: 'hashed_password',
         },
