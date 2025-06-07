@@ -24,7 +24,7 @@ describe('AuthService Tests', () => {
   };
 
   const mockConfigService = {
-    get: jest.fn((key: 'string') => {
+    get: jest.fn((key: string) => {
       const config = {
         AT_EXPIRATION_TIME: '60s',
         AT_SECRET: 'at-secret',
