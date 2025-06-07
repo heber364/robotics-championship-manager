@@ -1,26 +1,124 @@
-import { Injectable } from '@nestjs/common';
+import {  ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { CategoryEntity } from './entities/category.entity';
 
 @Injectable()
 export class CategoryService {
-  create(createCategoryDto: CreateCategoryDto) {
-    return 'This action adds a new category';
+  constructor(
+    private prismaService: PrismaService,
+  ) {}
+
+  async create(createCategoryDto: CreateCategoryDto): Promise<CategoryEntity> {
+    return await this.prismaService.category.create({
+      data: {
+        name: createCategoryDto.name,
+        description: createCategoryDto.description,
+        scoreRules: createCategoryDto.scoreRules,
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        scoreRules: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all category`;
+  async findAll(): Promise<CategoryEntity[]> {
+    return await this.prismaService.category.findMany({
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        scoreRules: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} category`;
+  async findOne(id: number) {
+    const category = await this.prismaService.category.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        scoreRules: true,
+        createdAt: true,
+        updatedAt: true,
+        arenas: true,
+        teams: true,
+      },
+  
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${id} not found`);
+    }
+    return category;
   }
 
-  update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    return `This action updates a #${id} category`;
+  async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<CategoryEntity> {
+    const category = await this.prismaService.category.findUnique({
+      where: { id },
+    });
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${id} not found`);
+    }
+    return this.prismaService.category.update({
+      where: { id },
+      data: {
+        name: updateCategoryDto.name,
+        description: updateCategoryDto.description,
+        scoreRules: updateCategoryDto.scoreRules,
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        scoreRules: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} category`;
+  async remove(id: number): Promise<boolean> {
+    const category = await this.prismaService.category.findUnique({
+      where: { id },
+      select: {
+        arenas:  true,
+        teams: true,
+      }
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${id} not found`);
+    }
+    
+    const hasArenaMatches = category.arenas.length > 0;
+    const hasTeams = category.teams.length > 0;
+
+    if (hasArenaMatches) {
+      throw new ForbiddenException(
+      `Category with ID ${id} cannot be deleted because it has associated arenas.`,
+      );
+    }
+    if (hasTeams) {
+      throw new ForbiddenException(
+      `Category with ID ${id} cannot be deleted because it has associated teams.`,
+      );
+    }
+
+    await this.prismaService.category.delete({
+      where: { id },
+    });
+
+    return true;
   }
 }
