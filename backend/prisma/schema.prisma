@@ -9,20 +9,108 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   name  String
   email String @unique
   hash  String
 
-  hashRt       String?
+  hashRt       String?        @map("hash_rt")
   roles        Role[]
-  hashOtpCode  String?
-  otpExpiresAt DateTime?
+  hashOtpCode  String?        @map("hash_otp_code")
+  otpExpiresAt DateTime?      @map("otp_expires_at")
+  teams        UsersOnTeams[]
+
+  @@map("users")
 }
 
 enum Role {
   USER
   ADMIN
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name        String
+  description String
+  scoreRules  String  @map("score_rules")
+  arenas      Arena[]
+  teams       Team[]
+
+  @@map("categories")
+}
+
+model Arena {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name        String
+  description String
+  scoreRules  String @map("score_rules")
+
+  idCategory Int      @map("id_category")
+  category   Category @relation(fields: [idCategory], references: [id])
+  matches    Match[]
+
+  @@map("arenas")
+}
+
+model Team {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name       String
+  robotName  String         @map("robot_name")
+  idCategory Int            @map("id_category")
+  category   Category       @relation(fields: [idCategory], references: [id])
+  matchesA   Match[]        @relation("TeamAMatches")
+  matchesB   Match[]        @relation("TeamBMatches")
+  users      UsersOnTeams[]
+
+  @@map("teams")
+}
+
+model Match {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  idTeamA     Int          @map("id_team_a")
+  teamA       Team         @relation("TeamAMatches", fields: [idTeamA], references: [id])
+  idTeamB     Int          @map("id_team_b")
+  teamB       Team         @relation("TeamBMatches", fields: [idTeamB], references: [id])
+  idArena     Int          @map("id_arena")
+  arena       Arena        @relation(fields: [idArena], references: [id])
+  date        DateTime
+  status      String
+  observation String?
+  matchResult MatchResult? @map("match_result")
+
+  @@map("matches")
+}
+
+enum MatchResult {
+  TEAM_A
+  TEAM_B
+  DRAW
+}
+
+model UsersOnTeams {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  idUser Int  @map("id_user")
+  user   User @relation(fields: [idUser], references: [id])
+  idTeam Int  @map("id_team")
+  team   Team @relation(fields: [idTeam], references: [id])
+
+  @@unique([idUser, idTeam])
+  @@map("users_on_teams")
 }
