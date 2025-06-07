@@ -1,4 +1,4 @@
-import {  ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -6,9 +6,7 @@ import { CategoryEntity } from './entities/category.entity';
 
 @Injectable()
 export class CategoryService {
-  constructor(
-    private prismaService: PrismaService,
-  ) {}
+  constructor(private prismaService: PrismaService) {}
 
   async create(createCategoryDto: CreateCategoryDto): Promise<CategoryEntity> {
     return await this.prismaService.category.create({
@@ -37,7 +35,7 @@ export class CategoryService {
         scoreRules: true,
         createdAt: true,
         updatedAt: true,
-      }
+      },
     });
   }
 
@@ -54,7 +52,6 @@ export class CategoryService {
         arenas: true,
         teams: true,
       },
-  
     });
 
     if (!category) {
@@ -92,26 +89,26 @@ export class CategoryService {
     const category = await this.prismaService.category.findUnique({
       where: { id },
       select: {
-        arenas:  true,
+        arenas: true,
         teams: true,
-      }
+      },
     });
 
     if (!category) {
       throw new NotFoundException(`Category with ID ${id} not found`);
     }
-    
+
     const hasArenaMatches = category.arenas.length > 0;
     const hasTeams = category.teams.length > 0;
 
     if (hasArenaMatches) {
       throw new ForbiddenException(
-      `Category with ID ${id} cannot be deleted because it has associated arenas.`,
+        `Category with ID ${id} cannot be deleted because it has associated arenas.`,
       );
     }
     if (hasTeams) {
       throw new ForbiddenException(
-      `Category with ID ${id} cannot be deleted because it has associated teams.`,
+        `Category with ID ${id} cannot be deleted because it has associated teams.`,
       );
     }
 
