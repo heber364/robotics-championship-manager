@@ -116,7 +116,10 @@
       "validators/",
       "guards/",
       "decorators/",
-      "strategies/"
+      "strategies/",
+      "\\.filter\\.ts$",
+      "\\.entity\\.ts$",
+      "\\.config\\.ts$"
     ],
     "testEnvironment": "node"
   }

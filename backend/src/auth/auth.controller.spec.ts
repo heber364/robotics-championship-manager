@@ -13,6 +13,9 @@ describe('AuthController', () => {
     logout: jest.fn(),
     refreshToken: jest.fn(),
     verifyOtp: jest.fn(),
+    changePassword: jest.fn(),
+    forgotPassword: jest.fn(),
+    resetPassword: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -37,7 +40,7 @@ describe('AuthController', () => {
         email: 'test@mail.com',
         password: 'pass',
       };
-      
+
       mockAuthService.signup.mockResolvedValueOnce({ userId: 1 });
 
       const result = await controller.signup(signupDto);
@@ -94,6 +97,40 @@ describe('AuthController', () => {
 
       expect(authService.refreshToken).toHaveBeenCalledWith(dto.userId, dto.refreshToken);
       expect(result).toEqual(tokens);
+    });
+  });
+
+  describe('ChangePassword', () => {
+    it('should call authService.changePassword', async () => {
+      const changePasswordDto = { oldPassword: 'old', newPassword: 'new' };
+
+      mockAuthService.changePassword.mockResolvedValueOnce(undefined);
+
+      await controller.changePassword(1, changePasswordDto);
+
+      expect(authService.changePassword).toHaveBeenCalledWith(1, changePasswordDto);
+    });
+  });
+
+  describe('ForgotPassword', () => {
+    it('should call authService.forgotPassword', async () => {
+      const forgotPasswordDto = { email: '' };
+
+      mockAuthService.forgotPassword.mockResolvedValueOnce(undefined);
+      await controller.forgotPassword(forgotPasswordDto);
+      expect(mockAuthService.forgotPassword).toHaveBeenCalledWith(forgotPasswordDto);
+      expect(mockAuthService.forgotPassword).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Reset ', () => {
+    it('should call authService.resetPassword', async () => {
+      const resetPasswordDto = { hashOtpCode: '1234' , newPassword: 'newPassword' };
+
+      mockAuthService.resetPassword.mockResolvedValueOnce(undefined);
+      await controller.resetPassword(resetPasswordDto);
+      expect(mockAuthService.resetPassword).toHaveBeenCalledWith(resetPasswordDto);
+      expect(mockAuthService.resetPassword).toHaveBeenCalledTimes(1);
     });
   });
 });
