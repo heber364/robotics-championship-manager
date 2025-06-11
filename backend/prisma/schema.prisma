@@ -26,8 +26,10 @@ model User {
 }
 
 enum Role {
-  USER
+  SUPER_ADMIN
   ADMIN
+  USER
+  GUEST
 }
 
 model Category {

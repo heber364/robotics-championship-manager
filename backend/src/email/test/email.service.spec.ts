@@ -58,7 +58,9 @@ describe('EmailService', () => {
   });
 
   it('should use default sender if sender is not provided', async () => {
-    const mockSendMail = jest.spyOn(emailService['mailTransport'], 'sendMail').mockResolvedValueOnce(true);
+    const mockSendMail = jest
+      .spyOn(emailService['mailTransport'], 'sendMail')
+      .mockResolvedValueOnce(true);
     const dto: SendEmailDto = {
       recipients: 'dest@mail.com',
       subject: 'Test Subject',

@@ -9,10 +9,11 @@ import {
   VerifyOtpDto,
 } from './dto';
 import { Tokens } from './types';
-import { AtGuard, RtGuard } from '../common/guards';
+import { RtGuard } from '../common/guards';
 import { GetCurrentUser, GetCurrentUserId, Public } from '../common/decorators';
 
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import { User } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
@@ -20,7 +21,6 @@ export class AuthController {
 
   @Post('signup')
   @Public()
-  @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse()
   async signup(@Body() signUpDto: SignUpDto): Promise<{ userId: number }> {
     return this.authService.signup(signUpDto);
@@ -28,7 +28,6 @@ export class AuthController {
 
   @Post('signin')
   @Public()
-  @HttpCode(HttpStatus.OK)
   @ApiOkResponse()
   async signin(@Body() siginDto: SignInDto): Promise<Tokens> {
     return this.authService.signin(siginDto);
@@ -36,25 +35,22 @@ export class AuthController {
 
   @Post('verify-email')
   @Public()
-  @HttpCode(HttpStatus.OK)
   @ApiOkResponse()
   async verifyOtp(@Body() dto: VerifyOtpDto): Promise<Tokens> {
     return this.authService.verifyOtp(dto);
   }
 
   @Post('logout')
-  @UseGuards(AtGuard)
-  @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOkResponse()
-  async logout(@GetCurrentUserId() userId: number): Promise<boolean> {
+  async logout(@GetCurrentUserId() userId: number, @GetCurrentUser() user: User): Promise<boolean> {
+    console.log(user)
     return this.authService.logout(userId);
   }
 
   @Post('refresh')
   @Public()
   @UseGuards(RtGuard)
-  @HttpCode(HttpStatus.OK)
   @ApiOkResponse()
   async refreshToken(
     @GetCurrentUserId() userId: number,
@@ -65,8 +61,6 @@ export class AuthController {
   }
 
   @Patch('change-password')
-  @UseGuards(AtGuard)
-  @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOkResponse()
   async changePassword(
@@ -78,7 +72,6 @@ export class AuthController {
 
   @Post('forgot-password')
   @Public()
-  @HttpCode(HttpStatus.OK)
   @ApiOkResponse()
   async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<void> {
     return this.authService.forgotPassword(dto);
@@ -86,7 +79,6 @@ export class AuthController {
 
   @Patch('reset-password')
   @Public()
-  @HttpCode(HttpStatus.OK)
   @ApiOkResponse()
   async resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
     return this.authService.resetPassword(dto);

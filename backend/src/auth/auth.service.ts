@@ -307,11 +307,21 @@ export class AuthService {
   }
 
   private async getTokens(userId: number, email: string): Promise<Tokens> {
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+      select: { roles: true }
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     const [atToken, rtToken] = await Promise.all([
       this.jwtService.signAsync(
         {
           sub: userId,
           email,
+          roles: user.roles,
         },
         {
           expiresIn: this.config.get('AT_EXPIRATION_TIME'),
@@ -322,6 +332,7 @@ export class AuthService {
         {
           sub: userId,
           email,
+          roles: user.roles,
         },
         {
           expiresIn: this.config.get('RT_EXPIRATION_TIME'),
