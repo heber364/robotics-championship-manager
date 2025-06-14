@@ -3,14 +3,15 @@ import { MatchService } from './match.service';
 import { CreateMatchDto, UpdateMatchDto } from './dto';
 import { ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
 import { MatchEntity } from './entities/match.entity';
-import { Public } from '../common/decorators/public.decorator';
+import { Roles } from 'src/common/decorators';
+import { Role } from 'src/common/enums';
 
-@Public()
 @Controller('matches')
 export class MatchController {
   constructor(private readonly matchService: MatchService) {}
 
   @Post()
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiCreatedResponse({ type: MatchEntity })
   create(@Body() createMatchDto: CreateMatchDto) {
     return this.matchService.create(createMatchDto);
@@ -29,12 +30,14 @@ export class MatchController {
   }
 
   @Patch(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOkResponse({ type: MatchEntity })
   update(@Param('id', ParseIntPipe) id: number, @Body() updateMatchDto: UpdateMatchDto) {
     return this.matchService.update(id, updateMatchDto);
   }
 
   @Delete(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOkResponse({ type: Boolean })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.matchService.remove(id);

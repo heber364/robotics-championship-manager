@@ -11,7 +11,7 @@ export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiBearerAuth()
   @ApiCreatedResponse({ type: CategoryEntity })
   create(@Body() createCategoryDto: CreateCategoryDto) {
@@ -31,7 +31,7 @@ export class CategoryController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiBearerAuth()
   @ApiOkResponse({ type: CategoryEntity })
   update(@Param('id', ParseIntPipe) id: number, @Body() updateCategoryDto: UpdateCategoryDto) {
@@ -39,7 +39,7 @@ export class CategoryController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiBearerAuth()
   @ApiOkResponse({ type: Boolean })
   remove(@Param('id', ParseIntPipe) id: number) {
