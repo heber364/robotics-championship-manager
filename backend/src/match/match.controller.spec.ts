@@ -3,7 +3,7 @@ import { MatchController } from './match.controller';
 import { MatchService } from './match.service';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
-import { MatchResult } from '@prisma/client';
+import { MatchResult, MatchStatus } from '@prisma/client';
 
 const mockMatch = {
   id: 1,
@@ -19,8 +19,8 @@ const mockMatch = {
 };
 
 describe('MatchController', () => {
-  let matchController: MatchController;
-  let matchService: MatchService;
+  let controller: MatchController;
+  let service: MatchService;
 
   const mockMatchService = {
     create: jest.fn(),
@@ -28,23 +28,31 @@ describe('MatchController', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    startMatch: jest.fn(),
+    pauseMatch: jest.fn(),
+    endMatch: jest.fn(),
+    updateMatchResult: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MatchController],
-      providers: [{ provide: MatchService, useValue: mockMatchService }],
+      providers: [
+        {
+          provide: MatchService,
+          useValue: mockMatchService,
+        },
+      ],
     }).compile();
 
-    matchController = module.get<MatchController>(MatchController);
-    matchService = module.get<MatchService>(MatchService);
+    controller = module.get<MatchController>(MatchController);
+    service = module.get<MatchService>(MatchService);
 
     jest.clearAllMocks();
   });
 
   it('should be defined', () => {
-    expect(matchController).toBeDefined();
-    expect(matchService).toBeDefined();
+    expect(controller).toBeDefined();
   });
 
   describe('create', () => {
@@ -53,15 +61,14 @@ describe('MatchController', () => {
       idTeamB: 2,
       idArena: 1,
       date: new Date(),
-      status: 'SCHEDULED',
       observation: 'Test observation',
-      matchResult: MatchResult.TEAM_A,
+
     };
 
     it('should create a match', async () => {
       mockMatchService.create.mockResolvedValueOnce(mockMatch);
 
-      const result = await matchController.create(createMatchDto);
+      const result = await controller.create(createMatchDto);
 
       expect(result).toEqual(mockMatch);
       expect(mockMatchService.create).toHaveBeenCalledWith(createMatchDto);
@@ -72,7 +79,7 @@ describe('MatchController', () => {
     it('should return an array of matches', async () => {
       mockMatchService.findAll.mockResolvedValueOnce([mockMatch]);
 
-      const result = await matchController.findAll();
+      const result = await controller.findAll();
 
       expect(result).toEqual([mockMatch]);
       expect(mockMatchService.findAll).toHaveBeenCalled();
@@ -83,7 +90,7 @@ describe('MatchController', () => {
     it('should return a match by id', async () => {
       mockMatchService.findOne.mockResolvedValueOnce(mockMatch);
 
-      const result = await matchController.findOne(1);
+      const result = await controller.findOne(1);
 
       expect(result).toEqual(mockMatch);
       expect(mockMatchService.findOne).toHaveBeenCalledWith(1);
@@ -92,14 +99,14 @@ describe('MatchController', () => {
 
   describe('update', () => {
     const updateMatchDto: UpdateMatchDto = {
-      status: 'IN_PROGRESS',
-      matchResult: MatchResult.TEAM_B,
+      observation: 'observaton',
+
     };
 
     it('should update a match', async () => {
       mockMatchService.update.mockResolvedValueOnce({ ...mockMatch, ...updateMatchDto });
 
-      const result = await matchController.update(1, updateMatchDto);
+      const result = await controller.update(1, updateMatchDto);
 
       expect(result).toEqual({ ...mockMatch, ...updateMatchDto });
       expect(mockMatchService.update).toHaveBeenCalledWith(1, updateMatchDto);
@@ -110,10 +117,81 @@ describe('MatchController', () => {
     it('should remove a match', async () => {
       mockMatchService.remove.mockResolvedValueOnce(true);
 
-      const result = await matchController.remove(1);
+      const result = await controller.remove(1);
 
       expect(result).toBe(true);
       expect(mockMatchService.remove).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('startMatch', () => {
+    it('should start a match', async () => {
+      const mockMatch = {
+        id: 1,
+        status: MatchStatus.IN_PROGRESS,
+        startTime: new Date(),
+      };
+
+      mockMatchService.startMatch.mockResolvedValue(mockMatch);
+
+      const result = await controller.startMatch(1);
+
+      expect(result).toEqual(mockMatch);
+      expect(service.startMatch).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('pauseMatch', () => {
+    it('should pause a match', async () => {
+      const mockMatch = {
+        id: 1,
+        status: MatchStatus.SCHEDULED,
+      };
+
+      mockMatchService.pauseMatch.mockResolvedValue(mockMatch);
+
+      const result = await controller.pauseMatch(1);
+
+      expect(result).toEqual(mockMatch);
+      expect(service.pauseMatch).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('endMatch', () => {
+    it('should end a match', async () => {
+      const mockMatch = {
+        id: 1,
+        status: MatchStatus.FINISHED,
+        endTime: new Date(),
+      };
+
+      mockMatchService.endMatch.mockResolvedValue(mockMatch);
+
+      const result = await controller.endMatch(1);
+
+      expect(result).toEqual(mockMatch);
+      expect(service.endMatch).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('updateMatchResult', () => {
+    it('should update match result', async () => {
+      const mockMatch = {
+        id: 1,
+        status: MatchStatus.IN_PROGRESS,
+        matchResult: MatchResult.TEAM_A,
+      };
+
+      const updateDto = {
+        result: MatchResult.TEAM_A,
+      };
+
+      mockMatchService.updateMatchResult.mockResolvedValue(mockMatch);
+
+      const result = await controller.updateMatchResult(1, updateDto);
+
+      expect(result).toEqual(mockMatch);
+      expect(service.updateMatchResult).toHaveBeenCalledWith(1, updateDto);
     });
   });
 });

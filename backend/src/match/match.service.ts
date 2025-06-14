@@ -10,6 +10,7 @@ import { MatchEntity } from './entities/match.entity';
 import { MatchStatus } from '@prisma/client';
 import { UpdateMatchStatusDto } from './dto';
 import { Role } from '../common/enums';
+import { UpdateMatchResultDto } from './dto';
 
 @Injectable()
 export class MatchService {
@@ -226,6 +227,41 @@ export class MatchService {
       data: {
         status: MatchStatus.FINISHED,
         endTime: new Date(),
+      },
+      select: {
+        id: true,
+        idTeamA: true,
+        idTeamB: true,
+        idArena: true,
+        date: true,
+        status: true,
+        startTime: true,
+        endTime: true,
+        observation: true,
+        matchResult: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async updateMatchResult(matchId: number, updateMatchResultDto: UpdateMatchResultDto) {
+    const match = await this.prismaService.match.findUnique({
+      where: { id: matchId },
+    });
+
+    if (!match) {
+      throw new NotFoundException('Match not found');
+    }
+
+    if (match.status !== MatchStatus.IN_PROGRESS) {
+      throw new BadRequestException('Can only update result for matches in progress');
+    }
+
+    return this.prismaService.match.update({
+      where: { id: matchId },
+      data: {
+        matchResult: updateMatchResultDto.result,
       },
       select: {
         id: true,

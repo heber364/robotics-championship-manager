@@ -9,7 +9,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { MatchService } from './match.service';
-import { CreateMatchDto, UpdateMatchDto } from './dto';
+import { CreateMatchDto, UpdateMatchDto, UpdateMatchResultDto } from './dto';
 import { ApiOkResponse, ApiCreatedResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { MatchEntity } from './entities/match.entity';
 import { Roles } from '../common/decorators';
@@ -69,5 +69,15 @@ export class MatchController {
   @Roles(Role.JUDGE)
   endMatch(@Param('id', ParseIntPipe) id: number) {
     return this.matchService.endMatch(id);
+  }
+
+  @Patch(':id/result')
+  @Roles(Role.JUDGE)
+  @ApiOkResponse({ type: MatchEntity })
+  updateMatchResult(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateMatchResultDto: UpdateMatchResultDto,
+  ) {
+    return this.matchService.updateMatchResult(id, updateMatchResultDto);
   }
 }
