@@ -3,4 +3,5 @@ export * from './sign-up.dto';
 export * from './change-password.dto';
 export * from './forgot-password.dto';
 export * from './reset-password.dto';
-export * from './verify-otp.dto';
+export * from './verify-email.dto';
+export * from './request-email-verification.dto';

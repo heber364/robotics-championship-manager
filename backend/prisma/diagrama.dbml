@@ -1,0 +1,84 @@
+Project "Robotics Championship Manager" {
+  database_type: 'PostgreSQL'
+  Note: 'Diagrama gerado a partir do schema.prisma do projeto.'
+}
+
+Table users {
+  id integer [pk, increment]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+  name varchar [not null]
+  email varchar [unique, not null]
+  hash text [not null]
+  hash_rt text
+  role Role
+  email_verified boolean [default: false]
+  email_verification_token text
+  email_verification_token_expires_at timestamp
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  USER
+  GUEST
+}
+
+Table categories {
+  id integer [pk, increment]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+  name varchar [not null]
+  description text [not null]
+  score_rules text [not null]
+}
+
+Table arenas {
+  id integer [pk, increment]
+  name varchar [not null]
+  youtube_link varchar [not null]
+  id_category integer [ref: > categories.id, not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+}
+
+Table teams {
+  id integer [pk, increment]
+  name varchar [not null]
+  robot_name varchar [not null]
+  id_category integer [ref: > categories.id, not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+}
+
+Table matches {
+  id integer [pk, increment]
+  id_team_a integer [ref: > teams.id, not null]
+  id_team_b integer [ref: > teams.id, not null]
+  id_arena integer [ref: > arenas.id, not null]
+  date timestamp [not null]
+  status varchar [not null]
+  observation text
+  match_result MatchResult
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+}
+
+enum MatchResult {
+  TEAM_A
+  TEAM_B
+  DRAW
+}
+
+// Tabela de junção (pivô) para o relacionamento N-N entre Users e Teams
+Table users_on_teams {
+  id integer [pk, increment]
+  id_user integer [ref: > users.id, not null]
+  id_team integer [ref: > teams.id, not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+
+  Indexes {
+    (id_user, id_team) [unique]
+  }
+}

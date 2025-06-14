@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
-import { AtGuard } from './common/guards';
+import { AtGuard, RolesGuard } from './common/guards';
 import { EmailModule } from './email/email.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CategoryModule } from './category/category.module';
@@ -26,6 +26,10 @@ import { UserModule } from './user/user.module';
     {
       provide: 'APP_GUARD',
       useClass: AtGuard,
+    },
+    {
+      provide: 'APP_GUARD',
+      useClass: RolesGuard,
     },
   ],
 })

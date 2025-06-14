@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   SignUpDto,
@@ -6,12 +6,12 @@ import {
   ChangePasswordDto,
   ForgotPasswordDto,
   ResetPasswordDto,
-  VerifyOtpDto,
+  VerifyEmailDto,
+  RequestEmailVerificationDto,
 } from './dto';
 import { Tokens } from './types';
-import { AtGuard, RtGuard } from '../common/guards';
+import { RtGuard } from '../common/guards';
 import { GetCurrentUser, GetCurrentUserId, Public } from '../common/decorators';
-
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 
 @Controller('auth')
@@ -20,7 +20,6 @@ export class AuthController {
 
   @Post('signup')
   @Public()
-  @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse()
   async signup(@Body() signUpDto: SignUpDto): Promise<{ userId: number }> {
     return this.authService.signup(signUpDto);
@@ -28,23 +27,26 @@ export class AuthController {
 
   @Post('signin')
   @Public()
-  @HttpCode(HttpStatus.OK)
   @ApiOkResponse()
   async signin(@Body() siginDto: SignInDto): Promise<Tokens> {
     return this.authService.signin(siginDto);
   }
 
+  @Post('request-email-verification')
+  @Public()
+  @ApiOkResponse()
+  requestEmailVerification(@Body() requestEmailVerificationDto: RequestEmailVerificationDto) {
+    return this.authService.requestEmailVerification(requestEmailVerificationDto);
+  }
+
   @Post('verify-email')
   @Public()
-  @HttpCode(HttpStatus.OK)
   @ApiOkResponse()
-  async verifyOtp(@Body() dto: VerifyOtpDto): Promise<Tokens> {
-    return this.authService.verifyOtp(dto);
+  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<Tokens> {
+    return this.authService.verifyEmail(dto);
   }
 
   @Post('logout')
-  @UseGuards(AtGuard)
-  @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOkResponse()
   async logout(@GetCurrentUserId() userId: number): Promise<boolean> {
@@ -54,7 +56,6 @@ export class AuthController {
   @Post('refresh')
   @Public()
   @UseGuards(RtGuard)
-  @HttpCode(HttpStatus.OK)
   @ApiOkResponse()
   async refreshToken(
     @GetCurrentUserId() userId: number,
@@ -65,8 +66,6 @@ export class AuthController {
   }
 
   @Patch('change-password')
-  @UseGuards(AtGuard)
-  @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOkResponse()
   async changePassword(
@@ -78,7 +77,6 @@ export class AuthController {
 
   @Post('forgot-password')
   @Public()
-  @HttpCode(HttpStatus.OK)
   @ApiOkResponse()
   async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<void> {
     return this.authService.forgotPassword(dto);
@@ -86,7 +84,6 @@ export class AuthController {
 
   @Patch('reset-password')
   @Public()
-  @HttpCode(HttpStatus.OK)
   @ApiOkResponse()
   async resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
     return this.authService.resetPassword(dto);

@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateArenaDto } from './dto/create-arena.dto';
-import { UpdateArenaDto } from './dto/update-arena.dto';
+import { CreateArenaDto, UpdateArenaDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ArenaEntity } from './entities/arena.entity';
 

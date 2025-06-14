@@ -1,17 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { ArenaService } from './arena.service';
-import { CreateArenaDto } from './dto/create-arena.dto';
-import { UpdateArenaDto } from './dto/update-arena.dto';
-import { Public } from '../common/decorators/public.decorator';
+import { CreateArenaDto, UpdateArenaDto } from './dto';
 import { ArenaEntity } from './entities/arena.entity';
-import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import { Roles } from 'src/common/decorators';
+import { Role } from 'src/common/enums';
 
-@Public()
+@ApiBearerAuth()
 @Controller('arena')
 export class ArenaController {
   constructor(private readonly arenaService: ArenaService) {}
 
   @Post()
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiCreatedResponse({ type: ArenaEntity })
   create(@Body() createArenaDto: CreateArenaDto) {
     return this.arenaService.create(createArenaDto);
@@ -30,12 +31,14 @@ export class ArenaController {
   }
 
   @Patch(':id')
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOkResponse({ type: ArenaEntity })
   update(@Param('id', ParseIntPipe) id: number, @Body() updateArenaDto: UpdateArenaDto) {
     return this.arenaService.update(id, updateArenaDto);
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOkResponse({ type: Boolean })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.arenaService.remove(id);

@@ -1,7 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Role, User } from '@prisma/client';
 
-export class UserEntity implements Omit<User, 'hash' | 'hashRt' | 'hashOtpCode' | 'otpExpiresAt'> {
+export class UserEntity
+  implements
+    Omit<
+      User,
+      | 'hash'
+      | 'hashRt'
+      | 'emailVerified'
+      | 'emailVerificationToken'
+      | 'emailVerificationTokenExpiresAt'
+    >
+{
   @ApiProperty()
   id: number;
 

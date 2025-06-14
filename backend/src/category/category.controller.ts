@@ -1,17 +1,18 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { CategoryService } from './category.service';
-import { CreateCategoryDto } from './dto/create-category.dto';
-import { UpdateCategoryDto } from './dto/update-category.dto';
-import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import { CreateCategoryDto, UpdateCategoryDto } from './dto';
+import { ApiCreatedResponse, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CategoryEntity } from './entities/category.entity';
-import { Public } from '../common/decorators/public.decorator';
+import { Roles } from '../common/decorators';
+import { Role } from '../common/enums';
 
-@Public()
+@ApiBearerAuth()
 @Controller('category')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Post()
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiCreatedResponse({ type: CategoryEntity })
   create(@Body() createCategoryDto: CreateCategoryDto) {
     return this.categoryService.create(createCategoryDto);
@@ -30,12 +31,15 @@ export class CategoryController {
   }
 
   @Patch(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  
   @ApiOkResponse({ type: CategoryEntity })
   update(@Param('id', ParseIntPipe) id: number, @Body() updateCategoryDto: UpdateCategoryDto) {
     return this.categoryService.update(id, updateCategoryDto);
   }
 
   @Delete(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOkResponse({ type: Boolean })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.categoryService.remove(id);

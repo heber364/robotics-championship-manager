@@ -1,17 +1,19 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { TeamService } from './team.service';
-import { CreateTeamDto } from './dto/create-team.dto';
-import { UpdateTeamDto } from './dto/update-team.dto';
+import { CreateTeamDto, UpdateTeamDto } from './dto';
 import { Public } from '../common/decorators/public.decorator';
 import { TeamEntity } from './entities/team.entity';
-import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import { Role } from 'src/common/enums';
+import { Roles } from 'src/common/decorators';
 
-@Public()
+@ApiBearerAuth()
 @Controller('team')
 export class TeamController {
   constructor(private readonly teamService: TeamService) {}
 
   @Post()
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiCreatedResponse({ type: TeamEntity })
   create(@Body() createTeamDto: CreateTeamDto) {
     return this.teamService.create(createTeamDto);
@@ -30,12 +32,14 @@ export class TeamController {
   }
 
   @Patch(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOkResponse({ type: TeamEntity })
   update(@Param('id', ParseIntPipe) id: number, @Body() updateTeamDto: UpdateTeamDto) {
     return this.teamService.update(id, updateTeamDto);
   }
 
   @Delete(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOkResponse({ type: Boolean })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.teamService.remove(id);
