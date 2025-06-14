@@ -6,8 +6,8 @@ import { GetCurrentUserId, Roles } from '../common/decorators';
 import { UpdateUserRolesDto } from './dto';
 import { Role } from 'src/common/enums';
 
-@Controller('users')
 @ApiBearerAuth()
+@Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 

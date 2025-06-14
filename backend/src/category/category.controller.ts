@@ -6,13 +6,13 @@ import { CategoryEntity } from './entities/category.entity';
 import { Roles } from '../common/decorators';
 import { Role } from '../common/enums';
 
+@ApiBearerAuth()
 @Controller('category')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
-  @ApiBearerAuth()
   @ApiCreatedResponse({ type: CategoryEntity })
   create(@Body() createCategoryDto: CreateCategoryDto) {
     return this.categoryService.create(createCategoryDto);
@@ -32,7 +32,7 @@ export class CategoryController {
 
   @Patch(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
-  @ApiBearerAuth()
+  
   @ApiOkResponse({ type: CategoryEntity })
   update(@Param('id', ParseIntPipe) id: number, @Body() updateCategoryDto: UpdateCategoryDto) {
     return this.categoryService.update(id, updateCategoryDto);
@@ -40,7 +40,6 @@ export class CategoryController {
 
   @Delete(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
-  @ApiBearerAuth()
   @ApiOkResponse({ type: Boolean })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.categoryService.remove(id);

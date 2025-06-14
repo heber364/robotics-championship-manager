@@ -3,11 +3,11 @@ import { TeamService } from './team.service';
 import { CreateTeamDto, UpdateTeamDto } from './dto';
 import { Public } from '../common/decorators/public.decorator';
 import { TeamEntity } from './entities/team.entity';
-import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import { Role } from 'src/common/enums';
 import { Roles } from 'src/common/decorators';
 
-@Public()
+@ApiBearerAuth()
 @Controller('team')
 export class TeamController {
   constructor(private readonly teamService: TeamService) {}

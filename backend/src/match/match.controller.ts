@@ -1,17 +1,19 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { MatchService } from './match.service';
 import { CreateMatchDto, UpdateMatchDto } from './dto';
-import { ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
+import { ApiOkResponse, ApiCreatedResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { MatchEntity } from './entities/match.entity';
 import { Roles } from 'src/common/decorators';
 import { Role } from 'src/common/enums';
 
+@ApiBearerAuth()
 @Controller('matches')
 export class MatchController {
   constructor(private readonly matchService: MatchService) {}
 
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  
   @ApiCreatedResponse({ type: MatchEntity })
   create(@Body() createMatchDto: CreateMatchDto) {
     return this.matchService.create(createMatchDto);

@@ -2,11 +2,11 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGua
 import { ArenaService } from './arena.service';
 import { CreateArenaDto, UpdateArenaDto } from './dto';
 import { ArenaEntity } from './entities/arena.entity';
-import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import { Roles } from 'src/common/decorators';
 import { Role } from 'src/common/enums';
 
-
+@ApiBearerAuth()
 @Controller('arena')
 export class ArenaController {
   constructor(private readonly arenaService: ArenaService) {}

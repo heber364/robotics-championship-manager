@@ -12,12 +12,11 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  name  String
-  email String @unique
-  hash  String
-
+  name                            String
+  email                           String         @unique
+  hash                            String
   hashRt                          String?        @map("hash_rt")
-  roles                           Role[]
+  role                            Role           @default(USER)
   emailVerified                   Boolean        @default(false) @map("email_verified")
   emailVerificationToken          String?        @map("email_verification_token")
   emailVerificationTokenExpiresAt DateTime?      @map("email_verification_token_expires_at")
@@ -29,8 +28,9 @@ model User {
 enum Role {
   SUPER_ADMIN
   ADMIN
+  JUDGE
+  ASSISTANT
   USER
-  GUEST
 }
 
 model Category {
@@ -48,21 +48,24 @@ model Category {
 }
 
 model Arena {
-  id          Int      @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   name        String
   youtubeLink String   @map("youtube_link")
   idCategory  Int      @map("id_category")
   category    Category @relation(fields: [idCategory], references: [id])
-  Match       Match[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  match       Match[]
 
   @@map("arenas")
 }
 
 model Team {
-  id         Int            @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   name       String
   robotName  String         @map("robot_name")
   idCategory Int            @map("id_category")
@@ -71,14 +74,14 @@ model Team {
   matchesB   Match[]        @relation("TeamBMatches")
   users      UsersOnTeams[]
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
   @@map("teams")
 }
 
 model Match {
-  id          Int          @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   idTeamA     Int          @map("id_team_a")
   teamA       Team         @relation("TeamAMatches", fields: [idTeamA], references: [id])
   idTeamB     Int          @map("id_team_b")
@@ -89,9 +92,6 @@ model Match {
   status      String
   observation String?
   matchResult MatchResult? @map("match_result")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("matches")
 }
