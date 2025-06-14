@@ -3,6 +3,7 @@ import { TeamService } from './team.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { NotFoundException } from '@nestjs/common';
+import { UpdateTeamDto } from './dto';
 
 const mockTeam = {
   id: 1,
@@ -48,6 +49,11 @@ describe('TeamService', () => {
     };
 
     it('should create a team', async () => {
+      const createTeamDto: CreateTeamDto = {
+        name: mockTeam.name,
+        robotName: mockTeam.robotName,
+        idCategory: mockTeam.idCategory
+      }
       mockPrismaService.team.create.mockResolvedValueOnce(mockTeam);
 
       const result = await teamService.create(createTeamDto);
@@ -55,6 +61,14 @@ describe('TeamService', () => {
       expect(result).toEqual(mockTeam);
       expect(mockPrismaService.team.create).toHaveBeenCalledWith({
         data: createTeamDto,
+        select: {
+          id: true,
+          name: true,
+          robotName: true,
+          idCategory: true,
+          createdAt: true,
+          updatedAt: true,
+        },
       });
     });
   });
@@ -107,17 +121,26 @@ describe('TeamService', () => {
 
   describe('update', () => {
     it('should update a team', async () => {
-      const updateTeamDto = { name: 'Updated Team', robotName: 'Updated Robot' };
+      const updateTeamDto: UpdateTeamDto = { name: mockTeam.name, robotName: mockTeam.robotName };
+
 
       mockPrismaService.team.findUnique.mockResolvedValueOnce(mockTeam);
-      mockPrismaService.team.update.mockResolvedValueOnce({ ...mockTeam, ...updateTeamDto });
+      mockPrismaService.team.update.mockResolvedValueOnce(mockTeam);
 
       const result = await teamService.update(1, updateTeamDto);
 
-      expect(result).toEqual({ ...mockTeam, ...updateTeamDto });
+      expect(result).toEqual(mockTeam);
       expect(mockPrismaService.team.update).toHaveBeenCalledWith({
         where: { id: 1 },
         data: updateTeamDto,
+        select: {
+          id: true,
+          name: true,
+          robotName: true,
+          idCategory: true,
+          createdAt: true,
+          updatedAt: true,
+        },
       });
     });
 

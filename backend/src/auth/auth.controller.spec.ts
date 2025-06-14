@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { SignUpDto } from './dto';
+import { ResetPasswordDto, SignUpDto, VerifyEmailDto } from './dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -65,7 +65,9 @@ describe('AuthController', () => {
 
   describe('VerifyOtp', () => {
     it('should call authService.verifyEmail and return tokens', async () => {
-      const verifyOtpDto = { userId: 1, otpCode: '123456' };
+      const verifyOtpDto: VerifyEmailDto = {
+        token: 'test-token',
+      };
       const tokens = { access_token: 'at', refresh_token: 'rt' };
       mockAuthService.verifyEmail = jest.fn().mockResolvedValueOnce(tokens);
 
@@ -125,7 +127,10 @@ describe('AuthController', () => {
 
   describe('Reset ', () => {
     it('should call authService.resetPassword', async () => {
-      const resetPasswordDto = { hashOtpCode: '1234' , newPassword: 'newPassword' };
+      const resetPasswordDto: ResetPasswordDto = {
+        newPassword: 'newPassword123',
+        token: 'test-token',
+      };
 
       mockAuthService.resetPassword.mockResolvedValueOnce(undefined);
       await controller.resetPassword(resetPasswordDto);

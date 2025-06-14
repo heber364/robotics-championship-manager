@@ -36,7 +36,7 @@ describe('UserController', () => {
           id: 1,
           name: 'Test User',
           email: 'test@example.com',
-          roles: [Role.USER],
+          role: Role.USER,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -57,7 +57,7 @@ describe('UserController', () => {
         id: 1,
         name: 'Test User',
         email: 'test@example.com',
-        roles: [Role.USER],
+        role: Role.USER,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

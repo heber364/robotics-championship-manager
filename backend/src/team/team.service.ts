@@ -10,6 +10,14 @@ export class TeamService {
   async create(createTeamDto: CreateTeamDto): Promise<TeamEntity> {
     return await this.prismaService.team.create({
       data: createTeamDto,
+      select: {
+        id: true,
+        name: true,
+        robotName: true,
+        idCategory: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 
@@ -34,10 +42,6 @@ export class TeamService {
         name: true,
         robotName: true,
         idCategory: true,
-        category: true,
-        users: true,
-        matchesA: true,
-        matchesB: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -61,6 +65,14 @@ export class TeamService {
     return await this.prismaService.team.update({
       where: { id },
       data: updateTeamDto,
+      select: {
+        id: true,
+        name: true,
+        robotName: true,
+        idCategory: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 

@@ -46,8 +46,6 @@ export class ArenaService {
         name: true,
         youtubeLink: true,
         idCategory: true,
-        category: true,
-        match: true,
         createdAt: true,
         updatedAt: true,
       },

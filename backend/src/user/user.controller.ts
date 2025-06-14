@@ -4,7 +4,7 @@ import { UserService } from './user.service';
 import { UserEntity } from './entities/user.entity';
 import { GetCurrentUserId, Roles } from '../common/decorators';
 import { UpdateUserRoleDto } from './dto';
-import { Role } from 'src/common/enums';
+import { Role } from '../common/enums';
 
 @ApiBearerAuth()
 @Controller('users')

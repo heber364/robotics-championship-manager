@@ -1,11 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { TeamService } from './team.service';
 import { CreateTeamDto, UpdateTeamDto } from './dto';
 import { Public } from '../common/decorators/public.decorator';
 import { TeamEntity } from './entities/team.entity';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
-import { Role } from 'src/common/enums';
-import { Roles } from 'src/common/decorators';
+import { Role } from '../common/enums';
+import { Roles } from '../common/decorators';
 
 @ApiBearerAuth()
 @Controller('team')

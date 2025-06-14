@@ -85,6 +85,8 @@ describe('MatchService', () => {
           idArena: true,
           date: true,
           status: true,
+          startTime: true,
+          endTime: true,
           observation: true,
           matchResult: true,
           createdAt: true,
@@ -122,6 +124,8 @@ describe('MatchService', () => {
           idArena: true,
           date: true,
           status: true,
+          startTime: true,
+          endTime: true,
           observation: true,
           matchResult: true,
           createdAt: true,
@@ -143,10 +147,15 @@ describe('MatchService', () => {
         select: {
           id: true,
           idTeamA: true,
+          teamA: true,
           idTeamB: true,
+          teamB: true,
           idArena: true,
+          arena: true,
           date: true,
           status: true,
+          startTime: true,
+          endTime: true,
           observation: true,
           matchResult: true,
           createdAt: true,
@@ -188,6 +197,8 @@ describe('MatchService', () => {
           idArena: true,
           date: true,
           status: true,
+          startTime: true,
+          endTime: true,
           observation: true,
           matchResult: true,
           createdAt: true,
@@ -268,7 +279,20 @@ describe('MatchService', () => {
           status: MatchStatus.IN_PROGRESS,
           startTime: expect.any(Date),
         },
-        select: expect.any(Object),
+        select: {
+          id: true,
+          idTeamA: true,
+          idTeamB: true,
+          idArena: true,
+          date: true,
+          status: true,
+          matchResult: true,
+          observation: true,
+          createdAt: true,
+          updatedAt: true,
+          startTime: true,
+          endTime: true
+        },
       });
     });
 
@@ -313,7 +337,20 @@ describe('MatchService', () => {
         data: {
           status: MatchStatus.SCHEDULED,
         },
-        select: expect.any(Object),
+        select: {
+          id: true,
+          idTeamA: true,
+          idTeamB: true,
+          idArena: true,
+          date: true,
+          status: true,
+          matchResult: true,
+          observation: true,
+          createdAt: true,
+          updatedAt: true,
+          startTime: true,
+          endTime: true
+        },
       });
     });
 
@@ -360,7 +397,20 @@ describe('MatchService', () => {
           status: MatchStatus.FINISHED,
           endTime: expect.any(Date),
         },
-        select: expect.any(Object),
+        select: {
+          id: true,
+          idTeamA: true,
+          idTeamB: true,
+          idArena: true,
+          date: true,
+          status: true,
+          matchResult: true,
+          observation: true,
+          createdAt: true,
+          updatedAt: true,
+          startTime: true,
+          endTime: true
+        },
       });
     });
 
@@ -420,7 +470,20 @@ describe('MatchService', () => {
         data: {
           matchResult: MatchResult.TEAM_A,
         },
-        select: expect.any(Object),
+        select: {
+          id: true,
+          idTeamA: true,
+          idTeamB: true,
+          idArena: true,
+          date: true,
+          status: true,
+          matchResult: true,
+          observation: true,
+          createdAt: true,
+          updatedAt: true,
+          startTime: true,
+          endTime: true
+        },
       });
     });
 
