@@ -79,7 +79,7 @@ export class AuthService {
       throw new ForbiddenException('Please verify your email before logging in');
     }
 
-    const tokens = await this.getTokens(user.id, user.email, user.roles);
+    const tokens = await this.getTokens(user.id, user.email, user.role);
     await this.updateRtHash(user.id, tokens.refresh_token);
     return tokens;
   }
@@ -128,7 +128,7 @@ export class AuthService {
       },
     });
 
-    const tokens = await this.getTokens(user.id, user.email, user.roles);
+    const tokens = await this.getTokens(user.id, user.email, user.role);
     await this.updateRtHash(user.id, tokens.refresh_token);
     return tokens;
   }
@@ -165,7 +165,7 @@ export class AuthService {
       throw new ForbiddenException('Access Denied');
     }
 
-    const tokens = await this.getTokens(user.id, user.email, user.roles);
+    const tokens = await this.getTokens(user.id, user.email, user.role);
     await this.updateRtHash(user.id, tokens.refresh_token);
     return tokens;
   }
@@ -276,13 +276,13 @@ export class AuthService {
     });
   }
 
-  private async getTokens(userId: number, email: string, roles: Role[]): Promise<Tokens> {
+  private async getTokens(userId: number, email: string, role: Role): Promise<Tokens> {
     const [at, rt] = await Promise.all([
       this.jwtService.signAsync(
         {
           sub: userId,
           email,
-          roles,
+          role,
         },
         {
           expiresIn: this.config.get('AT_EXPIRATION_TIME'),
@@ -293,7 +293,7 @@ export class AuthService {
         {
           sub: userId,
           email,
-          roles,
+          role,
         },
         {
           expiresIn: this.config.get('RT_EXPIRATION_TIME'),

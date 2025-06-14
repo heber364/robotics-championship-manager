@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { UserEntity } from './entities/user.entity';
 import { GetCurrentUserId, Roles } from '../common/decorators';
-import { UpdateUserRolesDto } from './dto';
+import { UpdateUserRoleDto } from './dto';
 import { Role } from 'src/common/enums';
 
 @ApiBearerAuth()
@@ -35,9 +35,9 @@ export class UserController {
   updateUserRoles(
     @GetCurrentUserId() currentUserId: number,
     @Param('id', ParseIntPipe) targetUserId: number,
-    @Body() updateUserRolesDto: UpdateUserRolesDto,
+    @Body() updateUserRoleDto: UpdateUserRoleDto,
   ) {
-    return this.userService.updateUserRoles(currentUserId, targetUserId, updateUserRolesDto);
+    return this.userService.updateUserRoles(currentUserId, targetUserId, updateUserRoleDto);
   }
 
   @Patch(':id/transfer-super-admin')

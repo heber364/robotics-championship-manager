@@ -77,6 +77,19 @@ model Team {
   @@map("teams")
 }
 
+enum MatchResult {
+  TEAM_A
+  TEAM_B
+  DRAW
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  FINISHED
+  CANCELLED
+}
+
 model Match {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now()) @map("created_at")
@@ -89,17 +102,13 @@ model Match {
   idArena     Int          @map("id_arena")
   arena       Arena        @relation(fields: [idArena], references: [id])
   date        DateTime
-  status      String
+  status      MatchStatus  @default(SCHEDULED)
+  startTime   DateTime?    @map("start_time")
+  endTime     DateTime?    @map("end_time")
   observation String?
   matchResult MatchResult? @map("match_result")
 
   @@map("matches")
-}
-
-enum MatchResult {
-  TEAM_A
-  TEAM_B
-  DRAW
 }
 
 model UsersOnTeams {
