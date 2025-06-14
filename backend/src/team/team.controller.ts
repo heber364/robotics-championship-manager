@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { TeamService } from './team.service';
-import { CreateTeamDto } from './dto/create-team.dto';
-import { UpdateTeamDto } from './dto/update-team.dto';
+import { CreateTeamDto, UpdateTeamDto } from './dto';
 import { Public } from '../common/decorators/public.decorator';
 import { TeamEntity } from './entities/team.entity';
 import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';

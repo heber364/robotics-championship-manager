@@ -3,7 +3,7 @@ import { CategoryService } from './category.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto';
 import { ApiCreatedResponse, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CategoryEntity } from './entities/category.entity';
-import { Roles, Public } from '../common/decorators';
+import { Roles } from '../common/decorators';
 import { Role } from '../common/enums';
 
 @Controller('category')

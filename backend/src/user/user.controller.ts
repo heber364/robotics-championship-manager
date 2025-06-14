@@ -1,24 +1,52 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
-import { ApiOkResponse } from '@nestjs/swagger';
+import { Controller, Get, Param, ParseIntPipe, Patch, Body } from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { UserEntity } from './entities/user.entity';
-import { Public } from '../common/decorators/public.decorator';
+import { GetCurrentUserId, Roles } from '../common/decorators';
+import { UpdateUserRolesDto } from './dto';
+import { Role } from 'src/common/enums';
 
 @Controller('users')
+@ApiBearerAuth()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Public()
+  @Get('me')
+  @ApiOkResponse({ type: UserEntity })
+  me(@GetCurrentUserId() userId: number) {
+    return this.userService.findOne(userId);
+  }
+
   @Get()
   @ApiOkResponse({ type: [UserEntity] })
   findAll() {
     return this.userService.findAll();
   }
 
-  @Public()
   @Get(':id')
   @ApiOkResponse({ type: UserEntity })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.userService.findOne(id);
+  }
+
+  @Patch(':id/roles')
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOkResponse({ type: UserEntity })
+  updateUserRoles(
+    @GetCurrentUserId() currentUserId: number,
+    @Param('id', ParseIntPipe) targetUserId: number,
+    @Body() updateUserRolesDto: UpdateUserRolesDto,
+  ) {
+    return this.userService.updateUserRoles(currentUserId, targetUserId, updateUserRolesDto);
+  }
+
+  @Patch(':id/transfer-super-admin')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOkResponse({ type: UserEntity })
+  transferSuperAdmin(
+    @GetCurrentUserId() currentUserId: number,
+    @Param('id', ParseIntPipe) newSuperAdminId: number,
+  ) {
+    return this.userService.transferSuperAdmin(currentUserId, newSuperAdminId);
   }
 }

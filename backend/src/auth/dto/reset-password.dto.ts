@@ -5,10 +5,12 @@ export class ResetPasswordDto {
   @IsString()
   @IsNotEmpty()
   @ApiProperty()
-  hashOtpCode: string;
+  token: string;
 
   @IsNotEmpty()
   @IsString()
+  @MinLength(6)
+  @MaxLength(20)
   @ApiProperty()
   newPassword: string;
 }

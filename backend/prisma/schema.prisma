@@ -16,11 +16,12 @@ model User {
   email String @unique
   hash  String
 
-  hashRt       String?        @map("hash_rt")
-  roles        Role[]
-  hashOtpCode  String?        @map("hash_otp_code")
-  otpExpiresAt DateTime?      @map("otp_expires_at")
-  teams        UsersOnTeams[]
+  hashRt                          String?        @map("hash_rt")
+  roles                           Role[]
+  emailVerified                   Boolean        @default(false) @map("email_verified")
+  emailVerificationToken          String?        @map("email_verification_token")
+  emailVerificationTokenExpiresAt DateTime?      @map("email_verification_token_expires_at")
+  teams                           UsersOnTeams[]
 
   @@map("users")
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   SignUpDto,
@@ -6,14 +6,13 @@ import {
   ChangePasswordDto,
   ForgotPasswordDto,
   ResetPasswordDto,
-  VerifyOtpDto,
+  VerifyEmailDto,
+  RequestEmailVerificationDto,
 } from './dto';
 import { Tokens } from './types';
 import { RtGuard } from '../common/guards';
 import { GetCurrentUser, GetCurrentUserId, Public } from '../common/decorators';
-
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
-import { User } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
@@ -33,18 +32,24 @@ export class AuthController {
     return this.authService.signin(siginDto);
   }
 
+  @Post('request-email-verification')
+  @Public()
+  @ApiOkResponse()
+  requestEmailVerification(@Body() requestEmailVerificationDto: RequestEmailVerificationDto) {
+    return this.authService.requestEmailVerification(requestEmailVerificationDto);
+  }
+
   @Post('verify-email')
   @Public()
   @ApiOkResponse()
-  async verifyOtp(@Body() dto: VerifyOtpDto): Promise<Tokens> {
-    return this.authService.verifyOtp(dto);
+  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<Tokens> {
+    return this.authService.verifyEmail(dto);
   }
 
   @Post('logout')
   @ApiBearerAuth()
   @ApiOkResponse()
-  async logout(@GetCurrentUserId() userId: number, @GetCurrentUser() user: User): Promise<boolean> {
-    console.log(user)
+  async logout(@GetCurrentUserId() userId: number): Promise<boolean> {
     return this.authService.logout(userId);
   }
 

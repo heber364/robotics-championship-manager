@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateMatchDto } from './dto/create-match.dto';
-import { UpdateMatchDto } from './dto/update-match.dto';
+import { CreateMatchDto, UpdateMatchDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchEntity } from './entities/match.entity';
 

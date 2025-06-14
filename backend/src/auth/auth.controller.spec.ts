@@ -12,7 +12,7 @@ describe('AuthController', () => {
     signin: jest.fn(),
     logout: jest.fn(),
     refreshToken: jest.fn(),
-    verifyOtp: jest.fn(),
+    verifyEmail: jest.fn(),
     changePassword: jest.fn(),
     forgotPassword: jest.fn(),
     resetPassword: jest.fn(),
@@ -64,14 +64,14 @@ describe('AuthController', () => {
   });
 
   describe('VerifyOtp', () => {
-    it('should call authService.verifyOtp and return tokens', async () => {
+    it('should call authService.verifyEmail and return tokens', async () => {
       const verifyOtpDto = { userId: 1, otpCode: '123456' };
       const tokens = { access_token: 'at', refresh_token: 'rt' };
-      mockAuthService.verifyOtp = jest.fn().mockResolvedValueOnce(tokens);
+      mockAuthService.verifyEmail = jest.fn().mockResolvedValueOnce(tokens);
 
-      const result = await controller.verifyOtp(verifyOtpDto);
+      const result = await controller.verifyEmail(verifyOtpDto);
 
-      expect(authService.verifyOtp).toHaveBeenCalledWith(verifyOtpDto);
+      expect(authService.verifyEmail).toHaveBeenCalledWith(verifyOtpDto);
       expect(result).toEqual(tokens);
     });
   });

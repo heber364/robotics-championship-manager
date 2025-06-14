@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { ArenaService } from './arena.service';
-import { CreateArenaDto } from './dto/create-arena.dto';
-import { UpdateArenaDto } from './dto/update-arena.dto';
+import { CreateArenaDto, UpdateArenaDto } from './dto';
 import { Public } from '../common/decorators/public.decorator';
 import { ArenaEntity } from './entities/arena.entity';
 import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';

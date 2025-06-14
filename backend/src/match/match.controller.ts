@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { MatchService } from './match.service';
-import { CreateMatchDto } from './dto/create-match.dto';
-import { UpdateMatchDto } from './dto/update-match.dto';
+import { CreateMatchDto, UpdateMatchDto } from './dto';
 import { ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
 import { MatchEntity } from './entities/match.entity';
 import { Public } from '../common/decorators/public.decorator';
