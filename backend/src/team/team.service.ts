@@ -89,4 +89,31 @@ export class TeamService {
 
     return true;
   }
+
+  async linkUserToTeam(userId: number, teamId: number): Promise<boolean> {
+    const team = await this.prismaService.team.findUnique({
+      where: { id: teamId },
+    });
+
+    if (!team) {
+      throw new NotFoundException('Team not found');
+    }
+
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.prismaService.usersOnTeams.create({
+      data: {
+        idUser: userId,
+        idTeam: teamId,
+      },
+    });
+
+    return true;
+  }
 }

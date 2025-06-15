@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { TeamService } from './team.service';
 import { CreateTeamDto, UpdateTeamDto } from './dto';
-import { Public } from '../common/decorators/public.decorator';
 import { TeamEntity } from './entities/team.entity';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import { Role } from '../common/enums';
@@ -43,5 +42,15 @@ export class TeamController {
   @ApiOkResponse({ type: Boolean })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.teamService.remove(id);
+  }
+
+  @Post(':teamId/users/:userId')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @ApiOkResponse({ type: Boolean })
+  linkUserToTeam(
+    @Param('teamId', ParseIntPipe) teamId: number,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.teamService.linkUserToTeam(userId, teamId);
   }
 }

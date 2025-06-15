@@ -6,4 +6,4 @@ export class UpdateMatchResultDto {
   @ApiProperty({ enum: MatchResult })
   @IsEnum(MatchResult)
   result: MatchResult;
-} 
+}

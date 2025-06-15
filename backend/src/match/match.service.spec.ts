@@ -22,7 +22,6 @@ const mockMatch = {
 
 describe('MatchService', () => {
   let matchService: MatchService;
-  let prismaService: PrismaService;
 
   const mockPrismaService = {
     match: {
@@ -46,7 +45,6 @@ describe('MatchService', () => {
     }).compile();
 
     matchService = module.get<MatchService>(MatchService);
-    prismaService = module.get<PrismaService>(PrismaService);
 
     jest.clearAllMocks();
   });
@@ -264,7 +262,7 @@ describe('MatchService', () => {
       const expectedResult = {
         ...mockMatch,
         status: MatchStatus.IN_PROGRESS,
-        startTime: expect.any(Date),
+        startTime: expect.any(Date) as Date,
       };
 
       mockPrismaService.match.findUnique.mockResolvedValue(mockMatch);
@@ -277,7 +275,7 @@ describe('MatchService', () => {
         where: { id: 1 },
         data: {
           status: MatchStatus.IN_PROGRESS,
-          startTime: expect.any(Date),
+          startTime: expect.any(Date) as Date,
         },
         select: {
           id: true,
@@ -291,7 +289,7 @@ describe('MatchService', () => {
           createdAt: true,
           updatedAt: true,
           startTime: true,
-          endTime: true
+          endTime: true,
         },
       });
     });
@@ -349,7 +347,7 @@ describe('MatchService', () => {
           createdAt: true,
           updatedAt: true,
           startTime: true,
-          endTime: true
+          endTime: true,
         },
       });
     });
@@ -382,7 +380,7 @@ describe('MatchService', () => {
       const expectedResult = {
         ...mockMatch,
         status: MatchStatus.FINISHED,
-        endTime: expect.any(Date),
+        endTime: expect.any(Date) as Date,
       };
 
       mockPrismaService.match.findUnique.mockResolvedValue(mockMatch);
@@ -395,7 +393,7 @@ describe('MatchService', () => {
         where: { id: 1 },
         data: {
           status: MatchStatus.FINISHED,
-          endTime: expect.any(Date),
+          endTime: expect.any(Date) as Date,
         },
         select: {
           id: true,
@@ -409,7 +407,7 @@ describe('MatchService', () => {
           createdAt: true,
           updatedAt: true,
           startTime: true,
-          endTime: true
+          endTime: true,
         },
       });
     });
@@ -482,7 +480,7 @@ describe('MatchService', () => {
           createdAt: true,
           updatedAt: true,
           startTime: true,
-          endTime: true
+          endTime: true,
         },
       });
     });

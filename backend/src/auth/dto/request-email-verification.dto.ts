@@ -5,4 +5,4 @@ export class RequestEmailVerificationDto {
   @ApiProperty()
   @IsEmail()
   email: string;
-} 
+}

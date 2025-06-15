@@ -21,7 +21,7 @@ export class UserEntity
   @ApiProperty()
   name: string;
 
-  @ApiProperty({ enum: Role})
+  @ApiProperty({ enum: Role })
   role: Role;
 
   @ApiProperty()
@@ -29,5 +29,4 @@ export class UserEntity
 
   @ApiProperty()
   updatedAt: Date;
-  
 }

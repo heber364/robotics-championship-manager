@@ -6,4 +6,4 @@ export class VerifyEmailDto {
   @IsNotEmpty()
   @ApiProperty()
   token: string;
-} 
+}

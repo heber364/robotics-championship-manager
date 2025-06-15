@@ -73,7 +73,6 @@ describe('UserService', () => {
           role: true,
           createdAt: true,
           updatedAt: true,
-          teams: true,
         },
       });
     });

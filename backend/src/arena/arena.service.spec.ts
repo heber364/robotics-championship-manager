@@ -74,7 +74,7 @@ describe('ArenaService', () => {
 
   describe('findAll', () => {
     it('should return all arenas', async () => {
-            mockPrismaService.arena.findMany.mockResolvedValueOnce([mockArena]);
+      mockPrismaService.arena.findMany.mockResolvedValueOnce([mockArena]);
 
       const result = await arenaService.findAll();
 

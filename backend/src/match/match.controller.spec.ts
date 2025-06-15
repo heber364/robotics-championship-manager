@@ -20,7 +20,6 @@ const mockMatch = {
 
 describe('MatchController', () => {
   let controller: MatchController;
-  let service: MatchService;
 
   const mockMatchService = {
     create: jest.fn(),
@@ -46,8 +45,6 @@ describe('MatchController', () => {
     }).compile();
 
     controller = module.get<MatchController>(MatchController);
-    service = module.get<MatchService>(MatchService);
-
     jest.clearAllMocks();
   });
 
@@ -62,7 +59,6 @@ describe('MatchController', () => {
       idArena: 1,
       date: new Date(),
       observation: 'Test observation',
-
     };
 
     it('should create a match', async () => {
@@ -100,7 +96,6 @@ describe('MatchController', () => {
   describe('update', () => {
     const updateMatchDto: UpdateMatchDto = {
       observation: 'observaton',
-
     };
 
     it('should update a match', async () => {
@@ -137,7 +132,7 @@ describe('MatchController', () => {
       const result = await controller.startMatch(1);
 
       expect(result).toEqual(mockMatch);
-      expect(service.startMatch).toHaveBeenCalledWith(1);
+      expect(mockMatchService.startMatch).toHaveBeenCalledWith(1);
     });
   });
 
@@ -153,7 +148,7 @@ describe('MatchController', () => {
       const result = await controller.pauseMatch(1);
 
       expect(result).toEqual(mockMatch);
-      expect(service.pauseMatch).toHaveBeenCalledWith(1);
+      expect(mockMatchService.pauseMatch).toHaveBeenCalledWith(1);
     });
   });
 
@@ -170,7 +165,7 @@ describe('MatchController', () => {
       const result = await controller.endMatch(1);
 
       expect(result).toEqual(mockMatch);
-      expect(service.endMatch).toHaveBeenCalledWith(1);
+      expect(mockMatchService.endMatch).toHaveBeenCalledWith(1);
     });
   });
 
@@ -191,7 +186,7 @@ describe('MatchController', () => {
       const result = await controller.updateMatchResult(1, updateDto);
 
       expect(result).toEqual(mockMatch);
-      expect(service.updateMatchResult).toHaveBeenCalledWith(1, updateDto);
+      expect(mockMatchService.updateMatchResult).toHaveBeenCalledWith(1, updateDto);
     });
   });
 });

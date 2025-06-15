@@ -25,15 +25,15 @@ describe('AuthService Tests', () => {
   };
 
   const mockConfigService = {
-    get: jest.fn((key: string) => {
-      const config = {
+    get: jest.fn((key: string): string => {
+      const config: Record<string, string> = {
         AT_EXPIRATION_TIME: '60s',
         AT_SECRET: 'at-secret',
         RT_EXPIRATION_TIME: '7d',
         RT_SECRET: 'rt-secret',
         FRONTEND_URL: 'http://localhost:3000',
       };
-      return config[key];
+      return config[key] || '';
     }),
   };
 
@@ -94,7 +94,9 @@ describe('AuthService Tests', () => {
         email: 'test@mail.com',
         hash: 'hashed_password',
       });
-      jest.spyOn(authService as any, 'generateVerificationToken').mockResolvedValueOnce('test-token');
+      jest
+        .spyOn(authService as any, 'generateVerificationToken')
+        .mockResolvedValueOnce('test-token');
       jest.spyOn(authService as any, 'sendVerificationEmail').mockResolvedValueOnce(undefined);
 
       const result = await authService.signup(mockAuth);
@@ -112,7 +114,10 @@ describe('AuthService Tests', () => {
         },
       });
       expect(authService['generateVerificationToken']).toHaveBeenCalledWith(1);
-      expect(authService['sendVerificationEmail']).toHaveBeenCalledWith('test-token', mockAuth.email);
+      expect(authService['sendVerificationEmail']).toHaveBeenCalledWith(
+        'test-token',
+        mockAuth.email,
+      );
     });
   });
 
@@ -210,7 +215,7 @@ describe('AuthService Tests', () => {
         where: {
           emailVerificationToken: verifyEmailDto.token,
           emailVerificationTokenExpiresAt: {
-            gt: expect.any(Date),
+            gt: expect.any(Date) as Date,
           },
         },
       });
@@ -429,7 +434,9 @@ describe('AuthService Tests', () => {
 
     it('should generate verification token and send email', async () => {
       jest.spyOn(mockPrismaService.user, 'findUnique').mockResolvedValueOnce(mockUser);
-      jest.spyOn(authService as any, 'generateVerificationToken').mockResolvedValueOnce('test-token');
+      jest
+        .spyOn(authService as any, 'generateVerificationToken')
+        .mockResolvedValueOnce('test-token');
       jest.spyOn(authService as any, 'sendVerificationEmail').mockResolvedValueOnce(undefined);
 
       await authService.forgotPassword({ email: mockEmail });
@@ -459,7 +466,7 @@ describe('AuthService Tests', () => {
         where: {
           emailVerificationToken: mockResetPasswordDto.token,
           emailVerificationTokenExpiresAt: {
-            gt: expect.any(Date),
+            gt: expect.any(Date) as Date,
           },
         },
       });
@@ -479,7 +486,7 @@ describe('AuthService Tests', () => {
         where: {
           emailVerificationToken: mockResetPasswordDto.token,
           emailVerificationTokenExpiresAt: {
-            gt: expect.any(Date),
+            gt: expect.any(Date) as Date,
           },
         },
       });

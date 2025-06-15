@@ -1,15 +1,9 @@
-import {
-  Injectable,
-  ForbiddenException,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateMatchDto, UpdateMatchDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchEntity } from './entities/match.entity';
 import { MatchStatus } from '@prisma/client';
-import { UpdateMatchStatusDto } from './dto';
-import { Role } from '../common/enums';
+
 import { UpdateMatchResultDto } from './dto';
 
 @Injectable()

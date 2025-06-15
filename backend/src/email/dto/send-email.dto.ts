@@ -1,8 +1,14 @@
-import { IsEmail, IsNotEmpty, IsString, IsArray, ValidateNested, IsOptional, Validate } from "class-validator";
-import { Type } from "class-transformer";
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  ValidateNested,
+  IsOptional,
+  Validate,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { Address } from 'nodemailer/lib/mailer';
-import { IsRecipientValid } from "../validators/recipient.validator";
-
+import { IsRecipientValid } from '../validators/recipient.validator';
 
 export class AddressDto implements Address {
   @IsEmail()

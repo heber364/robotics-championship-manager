@@ -5,7 +5,6 @@ import { ResetPasswordDto, SignUpDto, VerifyEmailDto } from './dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let authService: AuthService;
 
   const mockAuthService = {
     signup: jest.fn(),
@@ -25,7 +24,6 @@ describe('AuthController', () => {
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
-    authService = module.get<AuthService>(AuthService);
     jest.clearAllMocks();
   });
 
@@ -45,8 +43,8 @@ describe('AuthController', () => {
 
       const result = await controller.signup(signupDto);
 
-      expect(authService.signup).toHaveBeenCalledWith(signupDto);
       expect(result).toEqual({ userId: 1 });
+      expect(mockAuthService.signup).toHaveBeenCalledWith(signupDto);
     });
   });
 
@@ -58,8 +56,8 @@ describe('AuthController', () => {
 
       const result = await controller.signin(signInDto);
 
-      expect(authService.signin).toHaveBeenCalledWith(signInDto);
       expect(result).toEqual(tokens);
+      expect(mockAuthService.signin).toHaveBeenCalledWith(signInDto);
     });
   });
 
@@ -73,8 +71,8 @@ describe('AuthController', () => {
 
       const result = await controller.verifyEmail(verifyOtpDto);
 
-      expect(authService.verifyEmail).toHaveBeenCalledWith(verifyOtpDto);
       expect(result).toEqual(tokens);
+      expect(mockAuthService.verifyEmail).toHaveBeenCalledWith(verifyOtpDto);
     });
   });
 
@@ -84,8 +82,8 @@ describe('AuthController', () => {
 
       const result = await controller.logout(1);
 
-      expect(authService.logout).toHaveBeenCalledWith(1);
       expect(result).toBe(true);
+      expect(mockAuthService.logout).toHaveBeenCalledWith(1);
     });
   });
 
@@ -97,8 +95,8 @@ describe('AuthController', () => {
 
       const result = await controller.refreshToken(dto.userId, dto.refreshToken);
 
-      expect(authService.refreshToken).toHaveBeenCalledWith(dto.userId, dto.refreshToken);
       expect(result).toEqual(tokens);
+      expect(mockAuthService.refreshToken).toHaveBeenCalledWith(dto.userId, dto.refreshToken);
     });
   });
 
@@ -110,7 +108,7 @@ describe('AuthController', () => {
 
       await controller.changePassword(1, changePasswordDto);
 
-      expect(authService.changePassword).toHaveBeenCalledWith(1, changePasswordDto);
+      expect(mockAuthService.changePassword).toHaveBeenCalledWith(1, changePasswordDto);
     });
   });
 

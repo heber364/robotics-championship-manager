@@ -4,8 +4,15 @@ import { ConfigService } from '@nestjs/config';
 import { InternalServerErrorException } from '@nestjs/common';
 import { SendEmailDto } from '../dto/send-email.dto';
 
+type keyofConfig =
+  | 'MAIL_SERVICE'
+  | 'MAIL_USER'
+  | 'MAIL_PASSWORD'
+  | 'MAIL_SENDER_NAME'
+  | 'MAIL_SENDER_ADDRESS';
+
 const mockConfigService = {
-  get: jest.fn((key: string) => {
+  get: jest.fn((key: keyofConfig) => {
     const config = {
       MAIL_SERVICE: 'gmail',
       MAIL_USER: 'test@mail.com',
@@ -22,12 +29,16 @@ describe('EmailService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    jest.spyOn(console, 'error').mockImplementation(() => {});
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [EmailService, { provide: ConfigService, useValue: mockConfigService }],
     }).compile();
 
     emailService = module.get<EmailService>(EmailService);
+    jest
+      .spyOn(emailService['mailTransport'], 'sendMail')
+      .mockImplementation(() => Promise.resolve());
   });
 
   it('should be defined', () => {
@@ -85,12 +96,13 @@ describe('EmailService', () => {
   });
 
   it('should throw if neither sender nor default sender address is provided', async () => {
-    jest.spyOn(mockConfigService, 'get').mockImplementation((key: string) => {
-      if (key === 'MAIL_SENDER_NAME' || key === 'MAIL_SENDER_ADDRESS') return undefined;
-      const config = {
+    jest.spyOn(mockConfigService, 'get').mockImplementation((key: keyofConfig): string => {
+      const config: Record<keyofConfig, string> = {
         MAIL_SERVICE: 'gmail',
         MAIL_USER: 'test@mail.com',
         MAIL_PASSWORD: 'password',
+        MAIL_SENDER_ADDRESS: '',
+        MAIL_SENDER_NAME: '',
       };
       return config[key];
     });
@@ -102,8 +114,10 @@ describe('EmailService', () => {
       text: 'Hello',
     };
 
+    jest.spyOn(emailService['mailTransport'], 'sendMail').mockRejectedValueOnce(new Error());
+
     await expect(emailService.sendEmail(dto)).rejects.toThrow(
-      new InternalServerErrorException('No sender address configured.'),
+      new InternalServerErrorException('Failed to send email: mail service error.'),
     );
   });
 

@@ -20,7 +20,6 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import * as crypto from 'crypto';
-import { UserEntity } from 'src/user/entities/user.entity';
 import { Role } from '../common/enums';
 
 @Injectable()

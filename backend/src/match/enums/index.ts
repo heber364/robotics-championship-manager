@@ -1,2 +1,2 @@
-export * from  "./match-result.enum"
-export * from  "./match-status.enum"
+export * from './match-result.enum';
+export * from './match-status.enum';

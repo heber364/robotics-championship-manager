@@ -42,18 +42,12 @@ describe('TeamService', () => {
   });
 
   describe('create', () => {
-    const createTeamDto: CreateTeamDto = {
-      name: 'Test Team',
-      robotName: 'Test Robot',
-      idCategory: 1,
-    };
-
     it('should create a team', async () => {
       const createTeamDto: CreateTeamDto = {
         name: mockTeam.name,
         robotName: mockTeam.robotName,
-        idCategory: mockTeam.idCategory
-      }
+        idCategory: mockTeam.idCategory,
+      };
       mockPrismaService.team.create.mockResolvedValueOnce(mockTeam);
 
       const result = await teamService.create(createTeamDto);
@@ -122,7 +116,6 @@ describe('TeamService', () => {
   describe('update', () => {
     it('should update a team', async () => {
       const updateTeamDto: UpdateTeamDto = { name: mockTeam.name, robotName: mockTeam.robotName };
-
 
       mockPrismaService.team.findUnique.mockResolvedValueOnce(mockTeam);
       mockPrismaService.team.update.mockResolvedValueOnce(mockTeam);
