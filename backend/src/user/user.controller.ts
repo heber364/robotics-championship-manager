@@ -29,7 +29,7 @@ export class UserController {
     return await this.userService.findOne(id);
   }
 
-  @Patch(':id/roles')
+  @Patch(':id/role')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOkResponse({ type: UserEntity })
   async updateUserRoles(
