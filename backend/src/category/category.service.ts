@@ -47,6 +47,7 @@ export class CategoryService {
         name: true,
         description: true,
         scoreRules: true,
+
         createdAt: true,
         updatedAt: true,
         arenas: true,

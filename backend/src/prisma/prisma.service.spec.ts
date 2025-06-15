@@ -13,10 +13,7 @@ describe('PrismaService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PrismaService,
-        { provide: ConfigService, useValue: mockConfigService },
-      ],
+      providers: [PrismaService, { provide: ConfigService, useValue: mockConfigService }],
     }).compile();
 
     service = module.get<PrismaService>(PrismaService);
@@ -43,12 +40,14 @@ describe('PrismaService', () => {
     const userDeleteManySpy = jest.spyOn(service.user, 'deleteMany');
     await service.cleanDatabase();
     expect(userDeleteManySpy).not.toHaveBeenCalled();
-    process.env.NODE_ENV = 'test'; 
+    process.env.NODE_ENV = 'test';
   });
 
   it('should clean database when not in production', async () => {
     process.env.NODE_ENV = 'test';
-    const userDeleteManySpy = jest.spyOn(service.user, 'deleteMany').mockResolvedValueOnce(undefined as any);
+    const userDeleteManySpy = jest
+      .spyOn(service.user, 'deleteMany')
+      .mockResolvedValueOnce({ count: 0 });
     await service.cleanDatabase();
     expect(userDeleteManySpy).toHaveBeenCalled();
   });

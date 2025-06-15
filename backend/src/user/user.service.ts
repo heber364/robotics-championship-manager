@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { UserEntity } from './entities/user.entity';
 import { Role } from '../common/enums';
-import { UpdateUserRolesDto } from './dto/update-user-roles.dto';
+import { UpdateUserRoleDto } from './dto';
 
 @Injectable()
 export class UserService {
@@ -12,9 +12,9 @@ export class UserService {
     return await this.prismaService.user.findMany({
       select: {
         id: true,
-        email: true,
         name: true,
-        roles: true,
+        email: true,
+        role: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -28,7 +28,7 @@ export class UserService {
         id: true,
         email: true,
         name: true,
-        roles: true,
+        role: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -44,31 +44,32 @@ export class UserService {
   async updateUserRoles(
     currentUserId: number,
     targetUserId: number,
-    updateUserRolesDto: UpdateUserRolesDto,
+    updateUserRoleDto: UpdateUserRoleDto,
   ): Promise<UserEntity> {
     const currentUser = await this.findOne(currentUserId);
     const targetUser = await this.findOne(targetUserId);
 
     if (currentUserId === targetUserId) {
-      throw new ForbiddenException('You cannot update your own roles');
+      throw new ForbiddenException('You cannot update your own role');
     }
 
-    if (!currentUser.roles.includes(Role.SUPER_ADMIN)) {
-      if (targetUser.roles.includes(Role.ADMIN) || targetUser.roles.includes(Role.SUPER_ADMIN)) {
-        throw new ForbiddenException('Admins cannot update roles of other admins or super admins');
-      }
+    if (
+      currentUser.role === Role.ADMIN &&
+      (targetUser.role === Role.SUPER_ADMIN || targetUser.role === Role.ADMIN)
+    ) {
+      throw new ForbiddenException('Admins cannot update role of other admins or super admins');
     }
 
     const updatedUser = await this.prismaService.user.update({
       where: { id: targetUserId },
       data: {
-        roles: updateUserRolesDto.roles,
+        role: updateUserRoleDto.role,
       },
       select: {
         id: true,
         email: true,
         name: true,
-        roles: true,
+        role: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -85,13 +86,13 @@ export class UserService {
     const updatedNewSuperAdmin = await this.prismaService.user.update({
       where: { id: newSuperAdminId },
       data: {
-        roles: [Role.SUPER_ADMIN],
+        role: Role.SUPER_ADMIN,
       },
       select: {
         id: true,
         email: true,
         name: true,
-        roles: true,
+        role: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -100,7 +101,7 @@ export class UserService {
     await this.prismaService.user.update({
       where: { id: currentUserId },
       data: {
-        roles: [Role.ADMIN],
+        role: Role.ADMIN,
       },
     });
 

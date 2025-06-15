@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { ArenaService } from './arena.service';
-import { CreateArenaDto, UpdateArenaDto } from './dto';
+import { CreateArenaDto } from './dto/create-arena.dto';
+import { UpdateArenaDto } from './dto/update-arena.dto';
 import { ArenaEntity } from './entities/arena.entity';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
-import { Roles } from 'src/common/decorators';
-import { Role } from 'src/common/enums';
+import { Roles } from '../common/decorators';
+import { Role } from '../common/enums';
 
 @ApiBearerAuth()
 @Controller('arena')

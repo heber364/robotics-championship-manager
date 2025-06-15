@@ -3,6 +3,7 @@ import { ArenaService } from './arena.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateArenaDto } from './dto/create-arena.dto';
 import { NotFoundException } from '@nestjs/common';
+import { UpdateArenaDto } from './dto';
 
 const mockArena = {
   id: 1,
@@ -121,17 +122,16 @@ describe('ArenaService', () => {
 
   describe('update', () => {
     it('should update an arena', async () => {
-      const updateArenaDto = {
-        name: 'Updated Arena',
-        youtubeLink: 'https://youtube.com/watch?v=updated',
+      const updateArenaDto: UpdateArenaDto = {
+        name: mockArena.name,
+        youtubeLink: mockArena.youtubeLink,
       };
-
       mockPrismaService.arena.findUnique.mockResolvedValueOnce(mockArena);
-      mockPrismaService.arena.update.mockResolvedValueOnce({ ...mockArena, ...updateArenaDto });
+      mockPrismaService.arena.update.mockResolvedValueOnce(mockArena);
 
       const result = await arenaService.update(1, updateArenaDto);
 
-      expect(result).toEqual({ ...mockArena, ...updateArenaDto });
+      expect(result).toEqual(mockArena);
       expect(mockPrismaService.arena.update).toHaveBeenCalledWith({
         where: { id: 1 },
         data: updateArenaDto,

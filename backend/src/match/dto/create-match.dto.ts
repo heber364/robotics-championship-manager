@@ -1,6 +1,5 @@
-import { IsNotEmpty, IsNumber, IsString, IsDate, IsOptional, IsEnum } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, IsDate, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { MatchResult } from '@prisma/client';
 import { Type } from 'class-transformer';
 
 export class CreateMatchDto {
@@ -25,17 +24,7 @@ export class CreateMatchDto {
   date: Date;
 
   @IsString()
-  @IsNotEmpty()
-  @ApiProperty()
-  status: string;
-
-  @IsString()
   @IsOptional()
   @ApiProperty({ required: false })
   observation?: string;
-
-  @IsEnum(MatchResult)
-  @IsOptional()
-  @ApiProperty({ enum: MatchResult, required: false })
-  matchResult?: MatchResult;
 }

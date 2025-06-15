@@ -21,8 +21,8 @@ export class UserEntity
   @ApiProperty()
   name: string;
 
-  @ApiProperty({ enum: Role, isArray: true })
-  roles: Role[];
+  @ApiProperty({ enum: Role })
+  role: Role;
 
   @ApiProperty()
   createdAt: Date;

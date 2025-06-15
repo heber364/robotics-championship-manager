@@ -3,8 +3,9 @@ import { MatchService } from './match.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { Prisma } from '@prisma/client';
-import { MatchResult } from '@prisma/client';
-import { NotFoundException } from '@nestjs/common';
+import { MatchResult, MatchStatus } from '@prisma/client';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { UpdateMatchDto } from './dto';
 
 const mockMatch = {
   id: 1,
@@ -34,7 +35,13 @@ describe('MatchService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [MatchService, { provide: PrismaService, useValue: mockPrismaService }],
+      providers: [
+        MatchService,
+        {
+          provide: PrismaService,
+          useValue: mockPrismaService,
+        },
+      ],
     }).compile();
 
     matchService = module.get<MatchService>(MatchService);
@@ -52,9 +59,7 @@ describe('MatchService', () => {
       idTeamB: 2,
       idArena: 1,
       date: new Date(),
-      status: 'SCHEDULED',
       observation: 'Test observation',
-      matchResult: MatchResult.TEAM_A,
     };
 
     it('should create a match', async () => {
@@ -69,9 +74,7 @@ describe('MatchService', () => {
           idTeamB: createMatchDto.idTeamB,
           idArena: createMatchDto.idArena,
           date: createMatchDto.date,
-          status: createMatchDto.status,
           observation: createMatchDto.observation,
-          matchResult: createMatchDto.matchResult,
         },
         select: {
           id: true,
@@ -80,6 +83,8 @@ describe('MatchService', () => {
           idArena: true,
           date: true,
           status: true,
+          startTime: true,
+          endTime: true,
           observation: true,
           matchResult: true,
           createdAt: true,
@@ -117,6 +122,8 @@ describe('MatchService', () => {
           idArena: true,
           date: true,
           status: true,
+          startTime: true,
+          endTime: true,
           observation: true,
           matchResult: true,
           createdAt: true,
@@ -138,10 +145,15 @@ describe('MatchService', () => {
         select: {
           id: true,
           idTeamA: true,
+          teamA: true,
           idTeamB: true,
+          teamB: true,
           idArena: true,
+          arena: true,
           date: true,
           status: true,
+          startTime: true,
+          endTime: true,
           observation: true,
           matchResult: true,
           createdAt: true,
@@ -161,17 +173,18 @@ describe('MatchService', () => {
 
   describe('update', () => {
     it('should update a match', async () => {
-      const updateMatchDto = {
-        status: 'IN_PROGRESS',
-        matchResult: MatchResult.TEAM_B,
+      const updateMatchDto: UpdateMatchDto = {
+        observation: 'teste',
+        date: new Date(),
       };
 
       mockPrismaService.match.findUnique.mockResolvedValueOnce(mockMatch);
-      mockPrismaService.match.update.mockResolvedValueOnce({ ...mockMatch, ...updateMatchDto });
+      const updatedMatch = { ...mockMatch, ...updateMatchDto };
+      mockPrismaService.match.update.mockResolvedValueOnce(updatedMatch);
 
       const result = await matchService.update(1, updateMatchDto);
 
-      expect(result).toEqual({ ...mockMatch, ...updateMatchDto });
+      expect(result).toEqual(updatedMatch);
       expect(mockPrismaService.match.update).toHaveBeenCalledWith({
         where: { id: 1 },
         data: updateMatchDto,
@@ -182,6 +195,8 @@ describe('MatchService', () => {
           idArena: true,
           date: true,
           status: true,
+          startTime: true,
+          endTime: true,
           observation: true,
           matchResult: true,
           createdAt: true,
@@ -191,9 +206,13 @@ describe('MatchService', () => {
     });
 
     it('should throw NotFoundException if match not found', async () => {
+      const updateMatchDto: UpdateMatchDto = {
+        observation: 'teste',
+        date: new Date(),
+      };
       mockPrismaService.match.findUnique.mockResolvedValueOnce(null);
 
-      await expect(matchService.update(1, { status: '' })).rejects.toThrow(
+      await expect(matchService.update(1, updateMatchDto)).rejects.toThrow(
         new NotFoundException('Match not found'),
       );
     });
@@ -230,6 +249,261 @@ describe('MatchService', () => {
       await expect(matchService.remove(1)).rejects.toThrow(
         new NotFoundException('Match not found'),
       );
+    });
+  });
+
+  describe('startMatch', () => {
+    it('should start a scheduled match', async () => {
+      const mockMatch = {
+        id: 1,
+        status: MatchStatus.SCHEDULED,
+      };
+
+      const expectedResult = {
+        ...mockMatch,
+        status: MatchStatus.IN_PROGRESS,
+        startTime: expect.any(Date) as Date,
+      };
+
+      mockPrismaService.match.findUnique.mockResolvedValue(mockMatch);
+      mockPrismaService.match.update.mockResolvedValue(expectedResult);
+
+      const result = await matchService.startMatch(1);
+
+      expect(result).toEqual(expectedResult);
+      expect(mockPrismaService.match.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: {
+          status: MatchStatus.IN_PROGRESS,
+          startTime: expect.any(Date) as Date,
+        },
+        select: {
+          id: true,
+          idTeamA: true,
+          idTeamB: true,
+          idArena: true,
+          date: true,
+          status: true,
+          matchResult: true,
+          observation: true,
+          createdAt: true,
+          updatedAt: true,
+          startTime: true,
+          endTime: true,
+        },
+      });
+    });
+
+    it('should throw NotFoundException when match not found', async () => {
+      mockPrismaService.match.findUnique.mockResolvedValue(null);
+
+      await expect(matchService.startMatch(1)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when match is not scheduled', async () => {
+      const mockMatch = {
+        id: 1,
+        status: MatchStatus.IN_PROGRESS,
+      };
+
+      mockPrismaService.match.findUnique.mockResolvedValue(mockMatch);
+
+      await expect(matchService.startMatch(1)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('pauseMatch', () => {
+    it('should pause a match in progress', async () => {
+      const mockMatch = {
+        id: 1,
+        status: MatchStatus.IN_PROGRESS,
+      };
+
+      const expectedResult = {
+        ...mockMatch,
+        status: MatchStatus.SCHEDULED,
+      };
+
+      mockPrismaService.match.findUnique.mockResolvedValue(mockMatch);
+      mockPrismaService.match.update.mockResolvedValue(expectedResult);
+
+      const result = await matchService.pauseMatch(1);
+
+      expect(result).toEqual(expectedResult);
+      expect(mockPrismaService.match.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: {
+          status: MatchStatus.SCHEDULED,
+        },
+        select: {
+          id: true,
+          idTeamA: true,
+          idTeamB: true,
+          idArena: true,
+          date: true,
+          status: true,
+          matchResult: true,
+          observation: true,
+          createdAt: true,
+          updatedAt: true,
+          startTime: true,
+          endTime: true,
+        },
+      });
+    });
+
+    it('should throw NotFoundException when match not found', async () => {
+      mockPrismaService.match.findUnique.mockResolvedValue(null);
+
+      await expect(matchService.pauseMatch(1)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when match is not in progress', async () => {
+      const mockMatch = {
+        id: 1,
+        status: MatchStatus.SCHEDULED,
+      };
+
+      mockPrismaService.match.findUnique.mockResolvedValue(mockMatch);
+
+      await expect(matchService.pauseMatch(1)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('endMatch', () => {
+    it('should end a match in progress', async () => {
+      const mockMatch = {
+        id: 1,
+        status: MatchStatus.IN_PROGRESS,
+      };
+
+      const expectedResult = {
+        ...mockMatch,
+        status: MatchStatus.FINISHED,
+        endTime: expect.any(Date) as Date,
+      };
+
+      mockPrismaService.match.findUnique.mockResolvedValue(mockMatch);
+      mockPrismaService.match.update.mockResolvedValue(expectedResult);
+
+      const result = await matchService.endMatch(1);
+
+      expect(result).toEqual(expectedResult);
+      expect(mockPrismaService.match.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: {
+          status: MatchStatus.FINISHED,
+          endTime: expect.any(Date) as Date,
+        },
+        select: {
+          id: true,
+          idTeamA: true,
+          idTeamB: true,
+          idArena: true,
+          date: true,
+          status: true,
+          matchResult: true,
+          observation: true,
+          createdAt: true,
+          updatedAt: true,
+          startTime: true,
+          endTime: true,
+        },
+      });
+    });
+
+    it('should throw NotFoundException when match not found', async () => {
+      mockPrismaService.match.findUnique.mockResolvedValue(null);
+
+      await expect(matchService.endMatch(1)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when match is already finished', async () => {
+      const mockMatch = {
+        id: 1,
+        status: MatchStatus.FINISHED,
+      };
+
+      mockPrismaService.match.findUnique.mockResolvedValue(mockMatch);
+
+      await expect(matchService.endMatch(1)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when match is cancelled', async () => {
+      const mockMatch = {
+        id: 1,
+        status: MatchStatus.CANCELLED,
+      };
+
+      mockPrismaService.match.findUnique.mockResolvedValue(mockMatch);
+
+      await expect(matchService.endMatch(1)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('updateMatchResult', () => {
+    it('should update result for a match in progress', async () => {
+      const mockMatch = {
+        id: 1,
+        status: MatchStatus.IN_PROGRESS,
+      };
+
+      const updateDto = {
+        result: MatchResult.TEAM_A,
+      };
+
+      const expectedResult = {
+        ...mockMatch,
+        matchResult: MatchResult.TEAM_A,
+      };
+
+      mockPrismaService.match.findUnique.mockResolvedValue(mockMatch);
+      mockPrismaService.match.update.mockResolvedValue(expectedResult);
+
+      const result = await matchService.updateMatchResult(1, updateDto);
+
+      expect(result).toEqual(expectedResult);
+      expect(mockPrismaService.match.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: {
+          matchResult: MatchResult.TEAM_A,
+        },
+        select: {
+          id: true,
+          idTeamA: true,
+          idTeamB: true,
+          idArena: true,
+          date: true,
+          status: true,
+          matchResult: true,
+          observation: true,
+          createdAt: true,
+          updatedAt: true,
+          startTime: true,
+          endTime: true,
+        },
+      });
+    });
+
+    it('should throw NotFoundException when match not found', async () => {
+      mockPrismaService.match.findUnique.mockResolvedValue(null);
+
+      await expect(
+        matchService.updateMatchResult(1, { result: MatchResult.TEAM_A }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when match is not in progress', async () => {
+      const mockMatch = {
+        id: 1,
+        status: MatchStatus.SCHEDULED,
+      };
+
+      mockPrismaService.match.findUnique.mockResolvedValue(mockMatch);
+
+      await expect(
+        matchService.updateMatchResult(1, { result: MatchResult.TEAM_A }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

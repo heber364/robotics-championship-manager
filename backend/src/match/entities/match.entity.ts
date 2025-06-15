@@ -1,5 +1,6 @@
 import { Match, MatchResult } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
+import { MatchStatus } from '../enums';
 
 export class MatchEntity implements Match {
   @ApiProperty()
@@ -17,13 +18,19 @@ export class MatchEntity implements Match {
   @ApiProperty()
   date: Date;
 
-  @ApiProperty()
-  status: string;
+  @ApiProperty({ enum: MatchStatus })
+  status: MatchStatus;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ nullable: true })
+  startTime: Date | null;
+
+  @ApiProperty({ nullable: true })
+  endTime: Date | null;
+
+  @ApiProperty({ nullable: true })
   observation: string | null;
 
-  @ApiProperty({ enum: MatchResult, required: false })
+  @ApiProperty({ enum: MatchResult, nullable: true })
   matchResult: MatchResult | null;
 
   @ApiProperty()

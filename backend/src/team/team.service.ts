@@ -10,6 +10,14 @@ export class TeamService {
   async create(createTeamDto: CreateTeamDto): Promise<TeamEntity> {
     return await this.prismaService.team.create({
       data: createTeamDto,
+      select: {
+        id: true,
+        name: true,
+        robotName: true,
+        idCategory: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 
@@ -57,6 +65,14 @@ export class TeamService {
     return await this.prismaService.team.update({
       where: { id },
       data: updateTeamDto,
+      select: {
+        id: true,
+        name: true,
+        robotName: true,
+        idCategory: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 
@@ -69,6 +85,33 @@ export class TeamService {
     }
     await this.prismaService.team.delete({
       where: { id },
+    });
+
+    return true;
+  }
+
+  async linkUserToTeam(userId: number, teamId: number): Promise<boolean> {
+    const team = await this.prismaService.team.findUnique({
+      where: { id: teamId },
+    });
+
+    if (!team) {
+      throw new NotFoundException('Team not found');
+    }
+
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.prismaService.usersOnTeams.create({
+      data: {
+        idUser: userId,
+        idTeam: teamId,
+      },
     });
 
     return true;

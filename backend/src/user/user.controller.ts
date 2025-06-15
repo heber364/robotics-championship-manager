@@ -3,8 +3,8 @@ import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { UserEntity } from './entities/user.entity';
 import { GetCurrentUserId, Roles } from '../common/decorators';
-import { UpdateUserRolesDto } from './dto';
-import { Role } from 'src/common/enums';
+import { UpdateUserRoleDto } from './dto';
+import { Role } from '../common/enums';
 
 @ApiBearerAuth()
 @Controller('users')
@@ -13,40 +13,40 @@ export class UserController {
 
   @Get('me')
   @ApiOkResponse({ type: UserEntity })
-  me(@GetCurrentUserId() userId: number) {
-    return this.userService.findOne(userId);
+  async me(@GetCurrentUserId() userId: number): Promise<UserEntity> {
+    return await this.userService.findOne(userId);
   }
 
   @Get()
   @ApiOkResponse({ type: [UserEntity] })
-  findAll() {
-    return this.userService.findAll();
+  async findAll(): Promise<UserEntity[]> {
+    return await this.userService.findAll();
   }
 
   @Get(':id')
   @ApiOkResponse({ type: UserEntity })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.userService.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<UserEntity> {
+    return await this.userService.findOne(id);
   }
 
   @Patch(':id/roles')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOkResponse({ type: UserEntity })
-  updateUserRoles(
+  async updateUserRoles(
     @GetCurrentUserId() currentUserId: number,
     @Param('id', ParseIntPipe) targetUserId: number,
-    @Body() updateUserRolesDto: UpdateUserRolesDto,
-  ) {
-    return this.userService.updateUserRoles(currentUserId, targetUserId, updateUserRolesDto);
+    @Body() updateUserRoleDto: UpdateUserRoleDto,
+  ): Promise<UserEntity> {
+    return await this.userService.updateUserRoles(currentUserId, targetUserId, updateUserRoleDto);
   }
 
   @Patch(':id/transfer-super-admin')
   @Roles(Role.SUPER_ADMIN)
   @ApiOkResponse({ type: UserEntity })
-  transferSuperAdmin(
+  async transferSuperAdmin(
     @GetCurrentUserId() currentUserId: number,
     @Param('id', ParseIntPipe) newSuperAdminId: number,
-  ) {
-    return this.userService.transferSuperAdmin(currentUserId, newSuperAdminId);
+  ): Promise<UserEntity> {
+    return await this.userService.transferSuperAdmin(currentUserId, newSuperAdminId);
   }
 }
