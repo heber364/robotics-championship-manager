@@ -2,13 +2,17 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { CreateMatchDto, UpdateMatchDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchEntity } from './entities/match.entity';
-import { MatchStatus } from '@prisma/client';
+import { MatchGateway } from './match.gateway';
+import { MatchStatus } from './enums/match-status.enum';
 
 import { UpdateMatchResultDto } from './dto';
 
 @Injectable()
 export class MatchService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private readonly matchGateway: MatchGateway,
+  ) {}
 
   async create(createMatchDto: CreateMatchDto): Promise<MatchEntity> {
     return await this.prismaService.match.create({
@@ -92,7 +96,7 @@ export class MatchService {
       throw new NotFoundException('Match not found');
     }
 
-    return await this.prismaService.match.update({
+    const updatedMatch = await this.prismaService.match.update({
       where: { id },
       data: updateMatchDto,
       select: {
@@ -110,6 +114,10 @@ export class MatchService {
         updatedAt: true,
       },
     });
+
+    this.matchGateway.broadcastMatchUpdate(id, updatedMatch);
+
+    return updatedMatch;
   }
 
   async remove(id: number): Promise<boolean> {
@@ -128,9 +136,9 @@ export class MatchService {
     return true;
   }
 
-  async startMatch(matchId: number) {
+  async startMatch(id: number) {
     const match = await this.prismaService.match.findUnique({
-      where: { id: matchId },
+      where: { id },
     });
 
     if (!match) {
@@ -141,8 +149,8 @@ export class MatchService {
       throw new BadRequestException('Can only start matches that are scheduled');
     }
 
-    return this.prismaService.match.update({
-      where: { id: matchId },
+    const updatedMatch = await this.prismaService.match.update({
+      where: { id },
       data: {
         status: MatchStatus.IN_PROGRESS,
         startTime: new Date(),
@@ -162,11 +170,13 @@ export class MatchService {
         updatedAt: true,
       },
     });
+
+    this.matchGateway.broadcastMatchUpdate(id, updatedMatch);
   }
 
-  async pauseMatch(matchId: number) {
+  async pauseMatch(id: number) {
     const match = await this.prismaService.match.findUnique({
-      where: { id: matchId },
+      where: { id },
     });
 
     if (!match) {
@@ -177,8 +187,8 @@ export class MatchService {
       throw new BadRequestException('Can only pause matches that are in progress');
     }
 
-    return this.prismaService.match.update({
-      where: { id: matchId },
+    const updatedMatch = await this.prismaService.match.update({
+      where: { id },
       data: {
         status: MatchStatus.SCHEDULED,
       },
@@ -197,11 +207,13 @@ export class MatchService {
         updatedAt: true,
       },
     });
+    this.matchGateway.broadcastMatchUpdate(id, updatedMatch);
+    return updatedMatch;
   }
 
-  async endMatch(matchId: number) {
+  async endMatch(id: number) {
     const match = await this.prismaService.match.findUnique({
-      where: { id: matchId },
+      where: { id },
     });
 
     if (!match) {
@@ -216,8 +228,8 @@ export class MatchService {
       throw new BadRequestException('Cannot end a cancelled match');
     }
 
-    return this.prismaService.match.update({
-      where: { id: matchId },
+    const updatedMatch = await this.prismaService.match.update({
+      where: { id },
       data: {
         status: MatchStatus.FINISHED,
         endTime: new Date(),
@@ -237,11 +249,14 @@ export class MatchService {
         updatedAt: true,
       },
     });
+
+    this.matchGateway.broadcastMatchUpdate(id, updatedMatch);
+    return updatedMatch;
   }
 
-  async updateMatchResult(matchId: number, updateMatchResultDto: UpdateMatchResultDto) {
+  async updateMatchResult(id: number, updateMatchResultDto: UpdateMatchResultDto) {
     const match = await this.prismaService.match.findUnique({
-      where: { id: matchId },
+      where: { id },
     });
 
     if (!match) {
@@ -252,8 +267,8 @@ export class MatchService {
       throw new BadRequestException('Can only update result for matches in progress');
     }
 
-    return this.prismaService.match.update({
-      where: { id: matchId },
+    const updatedMatch = await this.prismaService.match.update({
+      where: { id },
       data: {
         matchResult: updateMatchResultDto.result,
       },
@@ -272,5 +287,8 @@ export class MatchService {
         updatedAt: true,
       },
     });
+
+    this.matchGateway.broadcastMatchUpdate(id, updatedMatch);
+    return updatedMatch;
   }
 }

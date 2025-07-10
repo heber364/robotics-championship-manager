@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { AtJwtStrategy, RtJwtStrategy } from './strategies';
+import { AtJwtStrategy, RtJwtStrategy, WsJwtStrategy } from './strategies';
 import { JwtModule } from '@nestjs/jwt';
 import { EmailModule } from '../email/email.module';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -24,7 +24,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
     EmailModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, AtJwtStrategy, RtJwtStrategy, RolesGuard],
+  providers: [AuthService, AtJwtStrategy, RtJwtStrategy, WsJwtStrategy, RolesGuard],
   exports: [AuthService, RolesGuard],
 })
 export class AuthModule {}
