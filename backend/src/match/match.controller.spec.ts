@@ -1,25 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MatchController } from './match.controller';
 import { MatchService } from './match.service';
-import { CreateMatchDto } from './dto/create-match.dto';
-import { UpdateMatchDto } from './dto/update-match.dto';
-import { MatchResult, MatchStatus } from '@prisma/client';
+import { CreateMatchDto, UpdateMatchDto, UpdateMatchScoreDto } from './dto';
+import { MatchEntity } from './entities/match.entity';
+import { MatchStatus } from './enums/match-status.enum';
+import { TeamIdentifier } from './dto/update-match-score.dto';
 
-const mockMatch = {
+// Mock alinhado com a nova MatchEntity
+const mockMatch: MatchEntity = {
   id: 1,
   idTeamA: 1,
   idTeamB: 2,
   idArena: 1,
+  idJudge: 1,
   date: new Date(),
-  status: 'SCHEDULED',
+  status: MatchStatus.SCHEDULED,
   observation: 'Test observation',
-  matchResult: MatchResult.TEAM_A,
+  teamAScore: 0,
+  teamBScore: 0,
+  startTime: null,
+  endTime: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
 
 describe('MatchController', () => {
   let controller: MatchController;
+  let service: MatchService;
 
   const mockMatchService = {
     create: jest.fn(),
@@ -30,7 +37,7 @@ describe('MatchController', () => {
     startMatch: jest.fn(),
     pauseMatch: jest.fn(),
     endMatch: jest.fn(),
-    updateMatchResult: jest.fn(),
+    updateMatchScore: jest.fn(), 
   };
 
   beforeEach(async () => {
@@ -45,6 +52,7 @@ describe('MatchController', () => {
     }).compile();
 
     controller = module.get<MatchController>(MatchController);
+    service = module.get<MatchService>(MatchService);
     jest.clearAllMocks();
   });
 
@@ -53,140 +61,113 @@ describe('MatchController', () => {
   });
 
   describe('create', () => {
-    const createMatchDto: CreateMatchDto = {
-      idTeamA: 1,
-      idTeamB: 2,
-      idArena: 1,
-      date: new Date(),
-      observation: 'Test observation',
-    };
-
-    it('should create a match', async () => {
+    it('should call service.create with the correct dto', async () => {
+      const createMatchDto: CreateMatchDto = {
+        idTeamA: 1,
+        idTeamB: 2,
+        idArena: 1,
+        idJudge: 1,
+        date: new Date(),
+        observation: 'Test observation',
+      };
       mockMatchService.create.mockResolvedValueOnce(mockMatch);
 
       const result = await controller.create(createMatchDto);
 
       expect(result).toEqual(mockMatch);
-      expect(mockMatchService.create).toHaveBeenCalledWith(createMatchDto);
+      expect(service.create).toHaveBeenCalledWith(createMatchDto);
     });
   });
 
   describe('findAll', () => {
-    it('should return an array of matches', async () => {
+    it('should call service.findAll and return an array of matches', async () => {
       mockMatchService.findAll.mockResolvedValueOnce([mockMatch]);
 
       const result = await controller.findAll();
 
       expect(result).toEqual([mockMatch]);
-      expect(mockMatchService.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalled();
     });
   });
 
   describe('findOne', () => {
-    it('should return a match by id', async () => {
+    it('should call service.findOne and return a match', async () => {
       mockMatchService.findOne.mockResolvedValueOnce(mockMatch);
 
       const result = await controller.findOne(1);
 
       expect(result).toEqual(mockMatch);
-      expect(mockMatchService.findOne).toHaveBeenCalledWith(1);
+      expect(service.findOne).toHaveBeenCalledWith(1);
     });
   });
 
   describe('update', () => {
-    const updateMatchDto: UpdateMatchDto = {
-      observation: 'observaton',
-    };
-
-    it('should update a match', async () => {
-      mockMatchService.update.mockResolvedValueOnce({ ...mockMatch, ...updateMatchDto });
+    it('should call service.update with correct parameters', async () => {
+      const updateMatchDto: UpdateMatchDto = { observation: 'Updated observation' };
+      const updatedMatch = { ...mockMatch, ...updateMatchDto };
+      mockMatchService.update.mockResolvedValueOnce(updatedMatch);
 
       const result = await controller.update(1, updateMatchDto);
 
-      expect(result).toEqual({ ...mockMatch, ...updateMatchDto });
-      expect(mockMatchService.update).toHaveBeenCalledWith(1, updateMatchDto);
+      expect(result).toEqual(updatedMatch);
+      expect(service.update).toHaveBeenCalledWith(1, updateMatchDto);
     });
   });
 
   describe('remove', () => {
-    it('should remove a match', async () => {
+    it('should call service.remove and return true', async () => {
       mockMatchService.remove.mockResolvedValueOnce(true);
 
       const result = await controller.remove(1);
 
       expect(result).toBe(true);
-      expect(mockMatchService.remove).toHaveBeenCalledWith(1);
+      expect(service.remove).toHaveBeenCalledWith(1);
     });
   });
 
   describe('startMatch', () => {
-    it('should start a match', async () => {
-      const mockMatch = {
-        id: 1,
-        status: MatchStatus.IN_PROGRESS,
-        startTime: new Date(),
-      };
+    it('should call service.startMatch', async () => {
+      const startedMatch = { ...mockMatch, status: MatchStatus.IN_PROGRESS };
+      mockMatchService.startMatch.mockResolvedValueOnce(startedMatch);
 
-      mockMatchService.startMatch.mockResolvedValue(mockMatch);
+      await controller.startMatch(1);
 
-      const result = await controller.startMatch(1);
-
-      expect(result).toEqual(mockMatch);
-      expect(mockMatchService.startMatch).toHaveBeenCalledWith(1);
+      expect(service.startMatch).toHaveBeenCalledWith(1);
     });
   });
 
   describe('pauseMatch', () => {
-    it('should pause a match', async () => {
-      const mockMatch = {
-        id: 1,
-        status: MatchStatus.SCHEDULED,
-      };
+    it('should call service.pauseMatch', async () => {
+      const pausedMatch = { ...mockMatch, status: MatchStatus.SCHEDULED };
+      mockMatchService.pauseMatch.mockResolvedValueOnce(pausedMatch);
 
-      mockMatchService.pauseMatch.mockResolvedValue(mockMatch);
+      await controller.pauseMatch(1);
 
-      const result = await controller.pauseMatch(1);
-
-      expect(result).toEqual(mockMatch);
-      expect(mockMatchService.pauseMatch).toHaveBeenCalledWith(1);
+      expect(service.pauseMatch).toHaveBeenCalledWith(1);
     });
   });
 
   describe('endMatch', () => {
-    it('should end a match', async () => {
-      const mockMatch = {
-        id: 1,
-        status: MatchStatus.FINISHED,
-        endTime: new Date(),
-      };
+    it('should call service.endMatch', async () => {
+      const finishedMatch = { ...mockMatch, status: MatchStatus.FINISHED };
+      mockMatchService.endMatch.mockResolvedValueOnce(finishedMatch);
 
-      mockMatchService.endMatch.mockResolvedValue(mockMatch);
+      await controller.endMatch(1);
 
-      const result = await controller.endMatch(1);
-
-      expect(result).toEqual(mockMatch);
-      expect(mockMatchService.endMatch).toHaveBeenCalledWith(1);
+      expect(service.endMatch).toHaveBeenCalledWith(1);
     });
   });
 
-  describe('updateMatchResult', () => {
-    it('should update match result', async () => {
-      const mockMatch = {
-        id: 1,
-        status: MatchStatus.IN_PROGRESS,
-        matchResult: MatchResult.TEAM_A,
-      };
+  describe('updateMatchScore', () => {
+    it('should call service.updateMatchScore with correct parameters', async () => {
+      const updateScoreDto: UpdateMatchScoreDto = { team: TeamIdentifier.A, score: 15 };
+      const updatedMatch = { ...mockMatch, teamAScore: 15 };
+      mockMatchService.updateMatchScore.mockResolvedValueOnce(updatedMatch);
 
-      const updateDto = {
-        result: MatchResult.TEAM_A,
-      };
+      const result = await controller.updateMatchScore(1, updateScoreDto);
 
-      mockMatchService.updateMatchResult.mockResolvedValue(mockMatch);
-
-      const result = await controller.updateMatchResult(1, updateDto);
-
-      expect(result).toEqual(mockMatch);
-      expect(mockMatchService.updateMatchResult).toHaveBeenCalledWith(1, updateDto);
+      expect(result).toEqual(updatedMatch);
+      expect(service.updateMatchScore).toHaveBeenCalledWith(1, updateScoreDto);
     });
   });
 });

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MatchEntity } from './entities/match.entity';
-import { WsGuard } from 'src/common/guards/ws-at.guard';
+import { WsGuard } from '../common/guards/ws-at.guard';
 import { UseGuards } from '@nestjs/common';
 // import { Roles } from 'src/common/decorators';
 // import { Role } from 'src/common/enums';
