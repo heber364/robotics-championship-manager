@@ -11,6 +11,7 @@ describe('AuthController', () => {
     signin: jest.fn(),
     logout: jest.fn(),
     refreshToken: jest.fn(),
+    requestEmailVerification: jest.fn(),
     verifyEmail: jest.fn(),
     changePassword: jest.fn(),
     forgotPassword: jest.fn(),
@@ -61,6 +62,20 @@ describe('AuthController', () => {
     });
   });
 
+  describe('Resquest email verification', () => {
+    it('should call authService.requestEmailVerification with the provided email', async () => {
+      const requestEmailVerificationDto = { email: 'test@mail.com' };
+
+      mockAuthService.requestEmailVerification = jest.fn().mockResolvedValueOnce(undefined);
+
+      await controller.requestEmailVerification(requestEmailVerificationDto);
+
+      expect(mockAuthService.requestEmailVerification).toHaveBeenCalledWith(
+        requestEmailVerificationDto,
+      );
+      expect(mockAuthService.requestEmailVerification).toHaveBeenCalledTimes(1);
+    });
+  });
   describe('VerifyOtp', () => {
     it('should call authService.verifyEmail and return tokens', async () => {
       const verifyOtpDto: VerifyEmailDto = {

@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateMatchDto, UpdateMatchDto, UpdateMatchScoreDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { TeamIdentifier } from './dto/update-match-score.dto';
@@ -144,13 +149,17 @@ export class MatchService {
     return true;
   }
 
-  async startMatch(id: number) {
+  async startMatch(id: number, judgeId: number) {
     const match = await this.prismaService.match.findUnique({
       where: { id },
     });
 
     if (!match) {
       throw new NotFoundException('Match not found');
+    }
+
+    if (match.idJudge !== judgeId) {
+      throw new UnauthorizedException('You are not authorized to start this match.');
     }
 
     if (match.status !== MatchStatus.SCHEDULED) {
@@ -184,13 +193,17 @@ export class MatchService {
     this.matchGateway.broadcastMatchUpdate(id, updatedMatch);
   }
 
-  async pauseMatch(id: number) {
+  async pauseMatch(id: number, judgeId: number) {
     const match = await this.prismaService.match.findUnique({
       where: { id },
     });
 
     if (!match) {
       throw new NotFoundException('Match not found');
+    }
+
+    if (match.idJudge !== judgeId) {
+      throw new UnauthorizedException('You are not authorized to pause this match.');
     }
 
     if (match.status !== MatchStatus.IN_PROGRESS) {
@@ -223,13 +236,17 @@ export class MatchService {
     return updatedMatch;
   }
 
-  async endMatch(id: number) {
+  async endMatch(id: number, judgeId: number) {
     const match = await this.prismaService.match.findUnique({
       where: { id },
     });
 
     if (!match) {
       throw new NotFoundException('Match not found');
+    }
+
+    if (match.idJudge !== judgeId) {
+      throw new UnauthorizedException('You are not authorized to end this match.');
     }
 
     if (match.status === MatchStatus.FINISHED) {
@@ -268,7 +285,7 @@ export class MatchService {
     return updatedMatch;
   }
 
-  async updateMatchScore(id: number, updateMatchScoreDto: UpdateMatchScoreDto) {
+  async updateMatchScore(id: number, updateMatchScoreDto: UpdateMatchScoreDto, judgeId: number) {
     const match = await this.prismaService.match.findUnique({
       where: { id },
     });
@@ -277,18 +294,26 @@ export class MatchService {
       throw new NotFoundException('Match not found');
     }
 
+    if (match.idJudge !== judgeId) {
+      throw new UnauthorizedException('You are not authorized to update the score for this match.');
+    }
+
     if (match.status !== MatchStatus.IN_PROGRESS) {
       throw new BadRequestException('Can only update score for matches in progress');
     }
 
-    const data =
-      updateMatchScoreDto.team === TeamIdentifier.A
-        ? { teamAScore: updateMatchScoreDto.score }
-        : { teamBScore: updateMatchScoreDto.score };
+    const scoreFieldMap = {
+      [TeamIdentifier.A]: 'teamAScore',
+      [TeamIdentifier.B]: 'teamBScore',
+    };
+
+    const fieldToUpdate = scoreFieldMap[updateMatchScoreDto.team];
 
     const updatedMatch = await this.prismaService.match.update({
       where: { id },
-      data,
+      data: {
+        [fieldToUpdate]: updateMatchScoreDto.score,
+      },
       select: {
         id: true,
         idTeamA: true,

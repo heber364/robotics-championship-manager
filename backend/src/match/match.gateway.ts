@@ -30,7 +30,6 @@ export class MatchGateway implements OnGatewayInit {
     console.log(`Socket ID: ${socket.id}`);
   }
 
-  //@Roles(Role.SUPER_ADMIN)
   @SubscribeMessage('joinMatchRoom')
   handleJoinRoom(@ConnectedSocket() client: Socket, @MessageBody() matchId: number) {
     const roomName = `match-${matchId}`;

@@ -5,7 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { EmailService } from './../email/email.service';
-import { VerifyEmailDto } from './dto';
+import { RequestEmailVerificationDto, VerifyEmailDto } from './dto';
 
 describe('AuthService Tests', () => {
   let authService: AuthService;
@@ -347,6 +347,32 @@ describe('AuthService Tests', () => {
       });
       expect((await import('argon2')).verify).toHaveBeenCalledWith(mockHashRt, mockRefreshToken);
       expect(mockJwtService.signAsync).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('RequestEmailVerification', () => {
+    const requestDto: RequestEmailVerificationDto = { email: 'test@mail.com' };
+
+    it('should throw NotFoundException if user does not exist', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValueOnce(null);
+      await expect(authService.requestEmailVerification(requestDto)).rejects.toThrow(new NotFoundException('User not found'));
+    });
+
+    it('should throw ForbiddenException if email is already verified', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValueOnce({ id: 1, emailVerified: true });
+      await expect(authService.requestEmailVerification(requestDto)).rejects.toThrow(new ForbiddenException('Email already verified'));
+    });
+
+    it('should generate and send a new verification email', async () => {
+      const user = { id: 1, email: requestDto.email, emailVerified: false };
+      mockPrismaService.user.findUnique.mockResolvedValueOnce(user);
+      jest.spyOn(authService as any, 'generateVerificationToken').mockResolvedValueOnce('new-token');
+      jest.spyOn(authService as any, 'sendVerificationEmail').mockResolvedValueOnce(undefined);
+
+      await authService.requestEmailVerification(requestDto);
+
+      expect(authService['generateVerificationToken']).toHaveBeenCalledWith(user.id);
+      expect(authService['sendVerificationEmail']).toHaveBeenCalledWith('new-token', user.email);
     });
   });
 

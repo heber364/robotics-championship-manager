@@ -35,8 +35,8 @@ export class AuthController {
   @Post('request-email-verification')
   @Public()
   @ApiOkResponse()
-  requestEmailVerification(@Body() requestEmailVerificationDto: RequestEmailVerificationDto) {
-    return this.authService.requestEmailVerification(requestEmailVerificationDto);
+  requestEmailVerification(@Body() requestEmailVerificationDto: RequestEmailVerificationDto): void {
+    this.authService.requestEmailVerification(requestEmailVerificationDto);
   }
 
   @Post('verify-email')

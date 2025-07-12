@@ -3,7 +3,7 @@ import { MatchService } from './match.service';
 import { CreateMatchDto, UpdateMatchDto, UpdateMatchScoreDto } from './dto';
 import { ApiOkResponse, ApiCreatedResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { MatchEntity } from './entities/match.entity';
-import { Roles } from '../common/decorators';
+import { GetCurrentUserId, Roles } from '../common/decorators';
 import { Role } from '../common/enums';
 
 @ApiBearerAuth()
@@ -12,7 +12,7 @@ export class MatchController {
   constructor(private readonly matchService: MatchService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @ApiCreatedResponse({ type: MatchEntity })
   create(@Body() createMatchDto: CreateMatchDto) {
     return this.matchService.create(createMatchDto);
@@ -31,14 +31,14 @@ export class MatchController {
   }
 
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @ApiOkResponse({ type: MatchEntity })
   update(@Param('id', ParseIntPipe) id: number, @Body() updateMatchDto: UpdateMatchDto) {
     return this.matchService.update(id, updateMatchDto);
   }
 
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @ApiOkResponse({ type: Boolean })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.matchService.remove(id);
@@ -46,20 +46,27 @@ export class MatchController {
 
   @Post(':id/start')
   @Roles(Role.JUDGE)
-  startMatch(@Param('id', ParseIntPipe) id: number) {
-    return this.matchService.startMatch(id);
+  startMatch(
+    @Param('id', ParseIntPipe) id: number,
+    @GetCurrentUserId() userId: number,) {
+    return this.matchService.startMatch(id, userId);
   }
 
   @Post(':id/pause')
   @Roles(Role.JUDGE)
-  pauseMatch(@Param('id', ParseIntPipe) id: number) {
-    return this.matchService.pauseMatch(id);
+  pauseMatch(
+    @Param('id', ParseIntPipe) id: number,
+    @GetCurrentUserId() userId: number
+  ) {
+    return this.matchService.pauseMatch(id, userId);
   }
 
   @Post(':id/end')
   @Roles(Role.JUDGE)
-  endMatch(@Param('id', ParseIntPipe) id: number) {
-    return this.matchService.endMatch(id);
+  endMatch(
+    @Param('id', ParseIntPipe) id: number,
+    @GetCurrentUserId() userId: number,) {
+    return this.matchService.endMatch(id, userId);
   }
 
   @Patch(':id/score')
@@ -68,7 +75,8 @@ export class MatchController {
   updateMatchScore(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateMatchScoreDto: UpdateMatchScoreDto,
+    @GetCurrentUserId() userId: number,
   ) {
-    return this.matchService.updateMatchScore(id, updateMatchScoreDto);
+    return this.matchService.updateMatchScore(id, updateMatchScoreDto, userId);
   }
 }

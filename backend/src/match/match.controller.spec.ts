@@ -6,7 +6,6 @@ import { MatchEntity } from './entities/match.entity';
 import { MatchStatus } from './enums/match-status.enum';
 import { TeamIdentifier } from './dto/update-match-score.dto';
 
-// Mock alinhado com a nova MatchEntity
 const mockMatch: MatchEntity = {
   id: 1,
   idTeamA: 1,
@@ -37,7 +36,7 @@ describe('MatchController', () => {
     startMatch: jest.fn(),
     pauseMatch: jest.fn(),
     endMatch: jest.fn(),
-    updateMatchScore: jest.fn(), 
+    updateMatchScore: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -126,48 +125,52 @@ describe('MatchController', () => {
   });
 
   describe('startMatch', () => {
-    it('should call service.startMatch', async () => {
+    it('should call service.startMatch with correct parameters', async () => {
+      const judgeId = 1;
       const startedMatch = { ...mockMatch, status: MatchStatus.IN_PROGRESS };
       mockMatchService.startMatch.mockResolvedValueOnce(startedMatch);
 
-      await controller.startMatch(1);
+      await controller.startMatch(1, judgeId);
 
-      expect(service.startMatch).toHaveBeenCalledWith(1);
+      expect(service.startMatch).toHaveBeenCalledWith(1, judgeId);
     });
   });
 
   describe('pauseMatch', () => {
-    it('should call service.pauseMatch', async () => {
+    it('should call service.pauseMatch with correct parameters', async () => {
+      const judgeId = 1;
       const pausedMatch = { ...mockMatch, status: MatchStatus.SCHEDULED };
       mockMatchService.pauseMatch.mockResolvedValueOnce(pausedMatch);
 
-      await controller.pauseMatch(1);
+      await controller.pauseMatch(1, judgeId);
 
-      expect(service.pauseMatch).toHaveBeenCalledWith(1);
+      expect(service.pauseMatch).toHaveBeenCalledWith(1, judgeId);
     });
   });
 
   describe('endMatch', () => {
-    it('should call service.endMatch', async () => {
+    it('should call service.endMatch with correct parameters', async () => {
+      const judgeId = 1;
       const finishedMatch = { ...mockMatch, status: MatchStatus.FINISHED };
       mockMatchService.endMatch.mockResolvedValueOnce(finishedMatch);
 
-      await controller.endMatch(1);
+      await controller.endMatch(1, judgeId);
 
-      expect(service.endMatch).toHaveBeenCalledWith(1);
+      expect(service.endMatch).toHaveBeenCalledWith(1, judgeId);
     });
   });
 
   describe('updateMatchScore', () => {
     it('should call service.updateMatchScore with correct parameters', async () => {
+      const judgeId = 1;
       const updateScoreDto: UpdateMatchScoreDto = { team: TeamIdentifier.A, score: 15 };
       const updatedMatch = { ...mockMatch, teamAScore: 15 };
       mockMatchService.updateMatchScore.mockResolvedValueOnce(updatedMatch);
 
-      const result = await controller.updateMatchScore(1, updateScoreDto);
+      const result = await controller.updateMatchScore(1, updateScoreDto, judgeId);
 
       expect(result).toEqual(updatedMatch);
-      expect(service.updateMatchScore).toHaveBeenCalledWith(1, updateScoreDto);
+      expect(service.updateMatchScore).toHaveBeenCalledWith(1, updateScoreDto, judgeId);
     });
   });
 });

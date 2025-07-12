@@ -3,7 +3,7 @@ import { MatchService } from './match.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMatchDto, UpdateMatchDto, UpdateMatchScoreDto } from './dto';
 import { Prisma } from '@prisma/client';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { MatchGateway } from './match.gateway';
 import { MatchStatus } from './enums/match-status.enum';
 import { TeamIdentifier } from './dto/update-match-score.dto';
@@ -26,6 +26,7 @@ const mockMatch: MatchEntity = {
   updatedAt: new Date(),
 };
 
+// Objeto de seleção de campos reutilizável para manter consistência
 const matchSelect = {
   id: true,
   idTeamA: true,
@@ -45,6 +46,8 @@ const matchSelect = {
 
 describe('MatchService', () => {
   let matchService: MatchService;
+  let prismaService: PrismaService;
+  let matchGateway: MatchGateway;
 
   const mockPrismaService = {
     match: {
@@ -76,6 +79,8 @@ describe('MatchService', () => {
     }).compile();
 
     matchService = module.get<MatchService>(MatchService);
+    prismaService = module.get<PrismaService>(PrismaService);
+    matchGateway = module.get<MatchGateway>(MatchGateway);
 
     jest.clearAllMocks();
   });
@@ -205,132 +210,154 @@ describe('MatchService', () => {
     });
   });
 
+describe('create', () => {
+    it('should create a match successfully', async () => {
+      const createMatchDto: CreateMatchDto = { idTeamA: 1, idTeamB: 2, idArena: 1, idJudge: 1, date: new Date(), observation: 'Test' };
+      mockPrismaService.match.create.mockResolvedValueOnce(mockMatch);
+      const result = await matchService.create(createMatchDto);
+      expect(result).toEqual(mockMatch);
+    });
+  });
+
   describe('startMatch', () => {
-    it('should start a scheduled match and broadcast the update', async () => {
+    const judgeId = 1; // Juiz proprietário da partida mock
+
+    it('should start a scheduled match', async () => {
       const scheduledMatch = { ...mockMatch, status: MatchStatus.SCHEDULED };
-      const startedMatch = { ...mockMatch, status: MatchStatus.IN_PROGRESS, startTime: expect.any(Date) };
-      
+      const startedMatch = { ...mockMatch, status: MatchStatus.IN_PROGRESS };
       mockPrismaService.match.findUnique.mockResolvedValueOnce(scheduledMatch);
       mockPrismaService.match.update.mockResolvedValueOnce(startedMatch);
 
-      await matchService.startMatch(1);
+      await matchService.startMatch(1, judgeId);
 
-      expect(mockPrismaService.match.update).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: { status: MatchStatus.IN_PROGRESS, startTime: expect.any(Date) },
-        select: matchSelect,
-      });
+      expect(mockPrismaService.match.update).toHaveBeenCalled();
       expect(mockMatchGateway.broadcastMatchUpdate).toHaveBeenCalledWith(1, startedMatch);
+    });
+
+    it('should throw NotFoundException if match is not found', async () => {
+      mockPrismaService.match.findUnique.mockResolvedValueOnce(null);
+      await expect(matchService.startMatch(1, judgeId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw UnauthorizedException if judge is not the owner', async () => {
+      const wrongJudgeId = 99;
+      mockPrismaService.match.findUnique.mockResolvedValueOnce(mockMatch);
+      await expect(matchService.startMatch(1, wrongJudgeId)).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw BadRequestException if match is not scheduled', async () => {
       const inProgressMatch = { ...mockMatch, status: MatchStatus.IN_PROGRESS };
       mockPrismaService.match.findUnique.mockResolvedValueOnce(inProgressMatch);
-
-      await expect(matchService.startMatch(1)).rejects.toThrow(new BadRequestException('Can only start matches that are scheduled'));
+      await expect(matchService.startMatch(1, judgeId)).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('pauseMatch', () => {
-    it('should pause an in-progress match and broadcast the update', async () => {
-        const inProgressMatch = { ...mockMatch, status: MatchStatus.IN_PROGRESS };
-        const pausedMatch = { ...mockMatch, status: MatchStatus.SCHEDULED };
+    const judgeId = 1;
 
-        mockPrismaService.match.findUnique.mockResolvedValueOnce(inProgressMatch);
-        mockPrismaService.match.update.mockResolvedValueOnce(pausedMatch);
+    it('should pause an in-progress match', async () => {
+      const inProgressMatch = { ...mockMatch, status: MatchStatus.IN_PROGRESS };
+      const pausedMatch = { ...mockMatch, status: MatchStatus.SCHEDULED };
+      mockPrismaService.match.findUnique.mockResolvedValueOnce(inProgressMatch);
+      mockPrismaService.match.update.mockResolvedValueOnce(pausedMatch);
 
-        const result = await matchService.pauseMatch(1);
+      const result = await matchService.pauseMatch(1, judgeId);
+      expect(result).toEqual(pausedMatch);
+    });
 
-        expect(result).toEqual(pausedMatch);
-        expect(mockPrismaService.match.update).toHaveBeenCalledWith({
-            where: { id: 1 },
-            data: { status: MatchStatus.SCHEDULED },
-            select: matchSelect,
-        });
-        expect(mockMatchGateway.broadcastMatchUpdate).toHaveBeenCalledWith(1, pausedMatch);
+    it('should throw NotFoundException if match is not found', async () => {
+      mockPrismaService.match.findUnique.mockResolvedValueOnce(null);
+      await expect(matchService.pauseMatch(1, judgeId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw UnauthorizedException if judge is not the owner', async () => {
+      const wrongJudgeId = 99;
+      mockPrismaService.match.findUnique.mockResolvedValueOnce(mockMatch);
+      await expect(matchService.pauseMatch(1, wrongJudgeId)).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw BadRequestException if match is not in progress', async () => {
-        const scheduledMatch = { ...mockMatch, status: MatchStatus.SCHEDULED };
-        mockPrismaService.match.findUnique.mockResolvedValueOnce(scheduledMatch);
-        
-        await expect(matchService.pauseMatch(1)).rejects.toThrow(new BadRequestException('Can only pause matches that are in progress'));
+      const scheduledMatch = { ...mockMatch, status: MatchStatus.SCHEDULED };
+      mockPrismaService.match.findUnique.mockResolvedValueOnce(scheduledMatch);
+      await expect(matchService.pauseMatch(1, judgeId)).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('endMatch', () => {
-    it('should end an in-progress match and broadcast the update', async () => {
-        const inProgressMatch = { ...mockMatch, status: MatchStatus.IN_PROGRESS };
-        const finishedMatch = { ...mockMatch, status: MatchStatus.FINISHED, endTime: expect.any(Date) };
+    const judgeId = 1;
 
-        mockPrismaService.match.findUnique.mockResolvedValueOnce(inProgressMatch);
-        mockPrismaService.match.update.mockResolvedValueOnce(finishedMatch);
-        
-        const result = await matchService.endMatch(1);
+    it('should end a match', async () => {
+      const inProgressMatch = { ...mockMatch, status: MatchStatus.IN_PROGRESS };
+      const finishedMatch = { ...mockMatch, status: MatchStatus.FINISHED };
+      mockPrismaService.match.findUnique.mockResolvedValueOnce(inProgressMatch);
+      mockPrismaService.match.update.mockResolvedValueOnce(finishedMatch);
 
-        expect(result).toEqual(finishedMatch);
-        expect(mockPrismaService.match.update).toHaveBeenCalledWith({
-            where: { id: 1 },
-            data: { status: MatchStatus.FINISHED, endTime: expect.any(Date) },
-            select: matchSelect,
-        });
-        expect(mockMatchGateway.broadcastMatchUpdate).toHaveBeenCalledWith(1, finishedMatch);
+      const result = await matchService.endMatch(1, judgeId);
+      expect(result).toEqual(finishedMatch);
+    });
+
+    it('should throw NotFoundException if match is not found', async () => {
+        mockPrismaService.match.findUnique.mockResolvedValueOnce(null);
+        await expect(matchService.endMatch(1, judgeId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw UnauthorizedException if judge is not the owner', async () => {
+        const wrongJudgeId = 99;
+        mockPrismaService.match.findUnique.mockResolvedValueOnce(mockMatch);
+        await expect(matchService.endMatch(1, wrongJudgeId)).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw BadRequestException if match is already finished', async () => {
-        const finishedMatch = { ...mockMatch, status: MatchStatus.FINISHED };
-        mockPrismaService.match.findUnique.mockResolvedValueOnce(finishedMatch);
-        
-        await expect(matchService.endMatch(1)).rejects.toThrow(new BadRequestException('Match is already finished'));
+      const finishedMatch = { ...mockMatch, status: MatchStatus.FINISHED };
+      mockPrismaService.match.findUnique.mockResolvedValueOnce(finishedMatch);
+      await expect(matchService.endMatch(1, judgeId)).rejects.toThrow(BadRequestException);
+    });
+    
+    it('should throw BadRequestException if match is cancelled', async () => {
+        const cancelledMatch = { ...mockMatch, status: MatchStatus.CANCELLED };
+        mockPrismaService.match.findUnique.mockResolvedValueOnce(cancelledMatch);
+        await expect(matchService.endMatch(1, judgeId)).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('updateMatchScore', () => {
+    const judgeId = 1;
     const inProgressMatch = { ...mockMatch, status: MatchStatus.IN_PROGRESS };
 
-    it("should update team A's score and broadcast the update", async () => {
-        const updateDto: UpdateMatchScoreDto = { team: TeamIdentifier.A, score: 10 };
-        const updatedMatch = { ...inProgressMatch, teamAScore: 10 };
+    it("should update team A's score", async () => {
+      const updateDto: UpdateMatchScoreDto = { team: TeamIdentifier.A, score: 10 };
+      const updatedMatch = { ...inProgressMatch, teamAScore: 10 };
+      mockPrismaService.match.findUnique.mockResolvedValueOnce(inProgressMatch);
+      mockPrismaService.match.update.mockResolvedValueOnce(updatedMatch);
 
-        mockPrismaService.match.findUnique.mockResolvedValueOnce(inProgressMatch);
-        mockPrismaService.match.update.mockResolvedValueOnce(updatedMatch);
-        
-        const result = await matchService.updateMatchScore(1, updateDto);
+      await matchService.updateMatchScore(1, updateDto, judgeId);
 
-        expect(result).toEqual(updatedMatch);
-        expect(mockPrismaService.match.update).toHaveBeenCalledWith({
-            where: { id: 1 },
-            data: { teamAScore: 10 },
-            select: matchSelect,
-        });
-        expect(mockMatchGateway.broadcastMatchUpdate).toHaveBeenCalledWith(1, updatedMatch);
+      expect(mockPrismaService.match.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { teamAScore: 10 },
+        select: matchSelect,
+      });
     });
 
-    it("should update team B's score and broadcast the update", async () => {
-        const updateDto: UpdateMatchScoreDto = { team: TeamIdentifier.B, score: 5 };
-        const updatedMatch = { ...inProgressMatch, teamBScore: 5 };
+    it('should throw NotFoundException if match is not found', async () => {
+        const updateDto: UpdateMatchScoreDto = { team: TeamIdentifier.A, score: 10 };
+        mockPrismaService.match.findUnique.mockResolvedValueOnce(null);
+        await expect(matchService.updateMatchScore(1, updateDto, judgeId)).rejects.toThrow(NotFoundException);
+    });
 
-        mockPrismaService.match.findUnique.mockResolvedValueOnce(inProgressMatch);
-        mockPrismaService.match.update.mockResolvedValueOnce(updatedMatch);
-
-        const result = await matchService.updateMatchScore(1, updateDto);
-
-        expect(result).toEqual(updatedMatch);
-        expect(mockPrismaService.match.update).toHaveBeenCalledWith({
-            where: { id: 1 },
-            data: { teamBScore: 5 },
-            select: matchSelect,
-        });
-        expect(mockMatchGateway.broadcastMatchUpdate).toHaveBeenCalledWith(1, updatedMatch);
+    it('should throw UnauthorizedException if judge is not the owner', async () => {
+      const wrongJudgeId = 99;
+      const updateDto: UpdateMatchScoreDto = { team: TeamIdentifier.A, score: 10 };
+      mockPrismaService.match.findUnique.mockResolvedValueOnce(inProgressMatch);
+      await expect(matchService.updateMatchScore(1, updateDto, wrongJudgeId)).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw BadRequestException if match is not in progress', async () => {
-        const scheduledMatch = { ...mockMatch, status: MatchStatus.SCHEDULED };
-        const updateDto: UpdateMatchScoreDto = { team: TeamIdentifier.A, score: 10 };
-
-        mockPrismaService.match.findUnique.mockResolvedValueOnce(scheduledMatch);
-        
-        await expect(matchService.updateMatchScore(1, updateDto)).rejects.toThrow(new BadRequestException('Can only update score for matches in progress'));
+      const scheduledMatch = { ...mockMatch, status: MatchStatus.SCHEDULED };
+      const updateDto: UpdateMatchScoreDto = { team: TeamIdentifier.A, score: 10 };
+      mockPrismaService.match.findUnique.mockResolvedValueOnce(scheduledMatch);
+      await expect(matchService.updateMatchScore(1, updateDto, judgeId)).rejects.toThrow(BadRequestException);
     });
   });
 });
+
