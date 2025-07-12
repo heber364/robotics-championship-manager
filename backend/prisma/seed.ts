@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { PrismaClient, Role, MatchStatus, MatchResult, Prisma } from '@prisma/client';
+import { PrismaClient, Role, MatchStatus, Prisma } from '@prisma/client';
 import { faker } from '@faker-js/faker/locale/pt_BR';
 import * as argon2 from 'argon2';
 
@@ -53,6 +53,7 @@ async function main() {
   await prisma.user.createMany({ data: usersData });
 
   const allUsers = await prisma.user.findMany();
+  const judgeUser = allUsers.find((u) => u.role === Role.JUDGE);
 
   const [catSumo, catSeguidor, catHockey] = await Promise.all([
     prisma.category.create({
@@ -163,6 +164,7 @@ async function main() {
         date: faker.date.future({ refDate: now }),
         status: MatchStatus.SCHEDULED,
         observation: faker.lorem.sentence(),
+        judge: { connect: { id: judgeUser!.id } },
       });
     }
   }
@@ -179,7 +181,9 @@ async function main() {
         status: MatchStatus.FINISHED,
         startTime: date,
         endTime: new Date(date.getTime() + 300000),
-        matchResult: faker.helpers.arrayElement([MatchResult.TEAM_A, MatchResult.TEAM_B]),
+        teamAScore: faker.number.int({ min: 0, max: 100 }),
+        teamBScore: faker.number.int({ min: 0, max: 100 }),
+        judge: { connect: { id: judgeUser!.id } },
       });
     }
   }
@@ -194,6 +198,9 @@ async function main() {
       date: startTime,
       status: MatchStatus.IN_PROGRESS,
       startTime: startTime,
+      teamAScore: faker.number.int({ min: 0, max: 100 }),
+      teamBScore: faker.number.int({ min: 0, max: 100 }),
+      judge: { connect: { id: judgeUser!.id } },
     });
   }
 
@@ -207,7 +214,9 @@ async function main() {
       observation: match.observation,
       startTime: match.startTime,
       endTime: match.endTime,
-      matchResult: match.matchResult,
+      teamAScore: match.teamAScore,
+      teamBScore: match.teamBScore,
+      idJudge: match.judge.connect!.id!,
     })),
   });
 }

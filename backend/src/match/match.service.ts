@@ -1,11 +1,10 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { CreateMatchDto, UpdateMatchDto } from './dto';
+import { CreateMatchDto, UpdateMatchDto, UpdateMatchScoreDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { TeamIdentifier } from './dto/update-match-score.dto';
 import { MatchEntity } from './entities/match.entity';
 import { MatchGateway } from './match.gateway';
 import { MatchStatus } from './enums/match-status.enum';
-
-import { UpdateMatchResultDto } from './dto';
 
 @Injectable()
 export class MatchService {
@@ -22,6 +21,7 @@ export class MatchService {
         idArena: createMatchDto.idArena,
         date: createMatchDto.date,
         observation: createMatchDto.observation,
+        idJudge: createMatchDto.idJudge,
       },
       select: {
         id: true,
@@ -33,7 +33,9 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -52,7 +54,9 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -75,7 +79,9 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -109,7 +115,9 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -165,7 +173,9 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -202,7 +212,9 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -244,7 +256,9 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -254,7 +268,7 @@ export class MatchService {
     return updatedMatch;
   }
 
-  async updateMatchResult(id: number, updateMatchResultDto: UpdateMatchResultDto) {
+  async updateMatchScore(id: number, updateMatchScoreDto: UpdateMatchScoreDto) {
     const match = await this.prismaService.match.findUnique({
       where: { id },
     });
@@ -264,14 +278,17 @@ export class MatchService {
     }
 
     if (match.status !== MatchStatus.IN_PROGRESS) {
-      throw new BadRequestException('Can only update result for matches in progress');
+      throw new BadRequestException('Can only update score for matches in progress');
     }
+
+    const data =
+      updateMatchScoreDto.team === TeamIdentifier.A
+        ? { teamAScore: updateMatchScoreDto.score }
+        : { teamBScore: updateMatchScoreDto.score };
 
     const updatedMatch = await this.prismaService.match.update({
       where: { id },
-      data: {
-        matchResult: updateMatchResultDto.result,
-      },
+      data,
       select: {
         id: true,
         idTeamA: true,
@@ -282,7 +299,9 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },

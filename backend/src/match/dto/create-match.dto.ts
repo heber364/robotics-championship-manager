@@ -27,4 +27,9 @@ export class CreateMatchDto {
   @IsOptional()
   @ApiProperty({ required: false })
   observation?: string;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty()
+  idJudge: number;
 }

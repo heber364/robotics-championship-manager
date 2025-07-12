@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { MatchService } from './match.service';
-import { CreateMatchDto, UpdateMatchDto, UpdateMatchResultDto } from './dto';
+import { CreateMatchDto, UpdateMatchDto, UpdateMatchScoreDto } from './dto';
 import { ApiOkResponse, ApiCreatedResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { MatchEntity } from './entities/match.entity';
 import { Roles } from '../common/decorators';
@@ -62,13 +62,13 @@ export class MatchController {
     return this.matchService.endMatch(id);
   }
 
-  @Patch(':id/result')
+  @Patch(':id/score')
   @Roles(Role.JUDGE)
   @ApiOkResponse({ type: MatchEntity })
-  updateMatchResult(
+  updateMatchScore(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateMatchResultDto: UpdateMatchResultDto,
+    @Body() updateMatchScoreDto: UpdateMatchScoreDto,
   ) {
-    return this.matchService.updateMatchResult(id, updateMatchResultDto);
+    return this.matchService.updateMatchScore(id, updateMatchScoreDto);
   }
 }
