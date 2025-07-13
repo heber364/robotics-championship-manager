@@ -2,8 +2,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-/// @seed="ts-node prisma/seed.ts"
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -24,6 +22,7 @@ model User {
   emailVerificationTokenExpiresAt DateTime?      @map("email_verification_token_expires_at")
   teams                           UsersOnTeams[]
   judgedMatches                   Match[]        @relation("JudgedMatches")
+  comments                        Comment[]
 
   @@map("users")
 }
@@ -107,8 +106,41 @@ model Match {
   teamBScore  Int         @default(0) @map("team_b_score")
   idJudge     Int         @map("id_judge")
   judge       User        @relation("JudgedMatches", fields: [idJudge], references: [id])
+  comments    Comment[]
+  photos      Photo[]
 
   @@map("matches")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  content String
+
+  idMatch Int   @map("id_match")
+  match   Match @relation(fields: [idMatch], references: [id])
+
+  idUser Int  @map("id_user")
+  author User @relation(fields: [idUser], references: [id])
+
+  @@map("comments")
+}
+
+model Photo {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  url     String 
+  caption String? 
+
+ 
+  idMatch Int   @map("id_match")
+  match   Match @relation(fields: [idMatch], references: [id])
+
+  @@map("photos")
 }
 
 model UsersOnTeams {

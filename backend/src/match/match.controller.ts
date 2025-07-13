@@ -1,10 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { MatchService } from './match.service';
 import { CreateMatchDto, UpdateMatchDto, UpdateMatchScoreDto } from './dto';
-import { ApiOkResponse, ApiCreatedResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiOkResponse, ApiCreatedResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { MatchEntity } from './entities/match.entity';
-import { GetCurrentUserId, Roles } from '../common/decorators';
+import { GetCurrentUserId, Public, Roles } from '../common/decorators';
 import { Role } from '../common/enums';
+import { Express } from 'express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { ImageFileValidationPipe } from 'src/common/validators';
 
 @ApiBearerAuth()
 @Controller('matches')
@@ -46,26 +60,19 @@ export class MatchController {
 
   @Post(':id/start')
   @Roles(Role.JUDGE)
-  startMatch(
-    @Param('id', ParseIntPipe) id: number,
-    @GetCurrentUserId() userId: number,) {
+  startMatch(@Param('id', ParseIntPipe) id: number, @GetCurrentUserId() userId: number) {
     return this.matchService.startMatch(id, userId);
   }
 
   @Post(':id/pause')
   @Roles(Role.JUDGE)
-  pauseMatch(
-    @Param('id', ParseIntPipe) id: number,
-    @GetCurrentUserId() userId: number
-  ) {
+  pauseMatch(@Param('id', ParseIntPipe) id: number, @GetCurrentUserId() userId: number) {
     return this.matchService.pauseMatch(id, userId);
   }
 
   @Post(':id/end')
   @Roles(Role.JUDGE)
-  endMatch(
-    @Param('id', ParseIntPipe) id: number,
-    @GetCurrentUserId() userId: number,) {
+  endMatch(@Param('id', ParseIntPipe) id: number, @GetCurrentUserId() userId: number) {
     return this.matchService.endMatch(id, userId);
   }
 
@@ -79,4 +86,5 @@ export class MatchController {
   ) {
     return this.matchService.updateMatchScore(id, updateMatchScoreDto, userId);
   }
+
 }

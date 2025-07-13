@@ -9,6 +9,8 @@ import { TeamModule } from './team/team.module';
 import { ArenaModule } from './arena/arena.module';
 import { MatchModule } from './match/match.module';
 import { UserModule } from './user/user.module';
+import { PhotosModule } from './photos/photos.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { UserModule } from './user/user.module';
     TeamModule,
     ArenaModule,
     MatchModule,
+    PhotosModule,
+    StorageModule,
   ],
   providers: [
     {
