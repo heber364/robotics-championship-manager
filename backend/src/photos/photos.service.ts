@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePhotoDto } from './dto';
 import { StorageService } from '../storage/storage.service';
+import { MATCH_PHOTOS_FOLDER } from './constants';
 
 @Injectable()
 export class PhotosService {
@@ -10,12 +11,8 @@ export class PhotosService {
     private storageService: StorageService,
   ) {}
 
-  async create(
-    matchId: number,
-    file: Express.Multer.File,
-    dto: CreatePhotoDto,
-  ) {
-    const uploadResult = await this.storageService.upload(file, 'match-photos');
+  async create(matchId: number, file: Express.Multer.File, dto: CreatePhotoDto) {
+    const uploadResult = await this.storageService.upload(file, MATCH_PHOTOS_FOLDER);
 
     return this.prisma.photo.create({
       data: {
@@ -33,7 +30,7 @@ export class PhotosService {
 
     return photos.map((photo) => ({
       ...photo,
-      url: this.storageService.getPublicUrl(photo.url, 'match-photos'),
+      url: this.storageService.getPublicUrl(photo.url, MATCH_PHOTOS_FOLDER),
     }));
   }
 
@@ -46,10 +43,12 @@ export class PhotosService {
       throw new Error('Photo not found');
     }
 
-    await this.storageService.remove(photo.url, 'match-photos');
+    await this.storageService.remove(photo.url, MATCH_PHOTOS_FOLDER);
 
-    return this.prisma.photo.delete({
+    await this.prisma.photo.delete({
       where: { id: photoId },
     });
+
+    return true;
   }
 }

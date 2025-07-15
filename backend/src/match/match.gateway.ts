@@ -4,15 +4,12 @@ import {
   WebSocketServer,
   MessageBody,
   ConnectedSocket,
-  OnGatewayInit,
+  WsResponse,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MatchEntity } from './entities/match.entity';
 import { WsGuard } from '../common/guards/ws-at.guard';
-import { UseGuards } from '@nestjs/common';
-// import { Roles } from 'src/common/decorators';
-// import { Role } from 'src/common/enums';
-//import { WsRolesGuard } from 'src/common/guards/ws-roles.guard';
+import { Logger, UseGuards } from '@nestjs/common';
 
 @UseGuards(WsGuard)
 @WebSocketGateway({
@@ -21,31 +18,37 @@ import { UseGuards } from '@nestjs/common';
     origin: '*',
   },
 })
-export class MatchGateway implements OnGatewayInit {
+export class MatchGateway {
   @WebSocketServer()
   server: Server;
 
-  afterInit(@ConnectedSocket() socket: Socket) {
-    console.log('MatchGateway initialized');
-    console.log(`Socket ID: ${socket.id}`);
+  private readonly logger = new Logger(MatchGateway.name);
+
+  private getRoomName(matchId: number): string {
+    return `match-${matchId}`;
   }
 
-  @SubscribeMessage('joinMatchRoom')
-  handleJoinRoom(@ConnectedSocket() client: Socket, @MessageBody() matchId: number) {
-    const roomName = `match-${matchId}`;
-    void client.join(roomName);
-    client.emit('joinedRoom', roomName);
-    console.log(`Client ${client.id} joined room: ${roomName}`);
+  @SubscribeMessage('joinRoom')
+  handleJoinRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() matchId: number,
+  ): WsResponse<{ status: string; room: string }> {
+    const roomName = this.getRoomName(matchId);
+    client.join(roomName);
+    this.logger.log(`Client ${client.id} joined room ${roomName}`);
+    return { event: 'joinedRoom', data: { status: 'success', room: roomName } };
   }
 
-  @SubscribeMessage('leaveMatchRoom')
-  handleLeaveRoom(@ConnectedSocket() client: Socket, @MessageBody() data: { matchId: number }) {
-    const roomName = `match-${data.matchId}`;
+  @SubscribeMessage('leaveRoom')
+  handleLeaveRoom(@ConnectedSocket() client: Socket, @MessageBody() matchId: number) {
+    const roomName = this.getRoomName(matchId);
     client.leave(roomName);
+    this.logger.log(`Client ${client.id} left room ${roomName}`);
   }
 
-  broadcastMatchUpdate(matchId: number, payload: MatchEntity) {
-    const roomName = `match-${matchId}`;
+  public broadcastMatchUpdate(matchId: number, payload: MatchEntity) {
+    const roomName = this.getRoomName(matchId);
     this.server.to(roomName).emit('matchUpdated', payload);
+    this.logger.log(`Broadcasting update for match ${matchId} in room ${roomName}`);
   }
 }
