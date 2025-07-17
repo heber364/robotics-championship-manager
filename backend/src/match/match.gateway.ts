@@ -5,6 +5,7 @@ import {
   MessageBody,
   ConnectedSocket,
   WsResponse,
+  OnGatewayInit,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MatchEntity } from './entities/match.entity';
@@ -18,7 +19,7 @@ import { Logger, UseGuards } from '@nestjs/common';
     origin: '*',
   },
 })
-export class MatchGateway {
+export class MatchGateway implements OnGatewayInit{
   @WebSocketServer()
   server: Server;
 
@@ -28,15 +29,19 @@ export class MatchGateway {
     return `match-${matchId}`;
   }
 
+  afterInit(@ConnectedSocket() socket: Socket) {
+    this.logger.log(`Gateway initialized for socket ID: ${socket.id}`);
+  }
+
+
   @SubscribeMessage('joinRoom')
   handleJoinRoom(
     @ConnectedSocket() client: Socket,
     @MessageBody() matchId: number,
-  ): WsResponse<{ status: string; room: string }> {
+  ){
     const roomName = this.getRoomName(matchId);
     client.join(roomName);
     this.logger.log(`Client ${client.id} joined room ${roomName}`);
-    return { event: 'joinedRoom', data: { status: 'success', room: roomName } };
   }
 
   @SubscribeMessage('leaveRoom')
@@ -48,7 +53,7 @@ export class MatchGateway {
 
   public broadcastMatchUpdate(matchId: number, payload: MatchEntity) {
     const roomName = this.getRoomName(matchId);
-    this.server.to(roomName).emit('matchUpdated', payload);
+    this.server.to(roomName).emit('updated', payload);
     this.logger.log(`Broadcasting update for match ${matchId} in room ${roomName}`);
   }
 }
