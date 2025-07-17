@@ -4,7 +4,6 @@ import {
   WebSocketServer,
   MessageBody,
   ConnectedSocket,
-  WsResponse,
   OnGatewayInit,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';

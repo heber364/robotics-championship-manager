@@ -11,6 +11,7 @@ import { MatchModule } from './match/match.module';
 import { UserModule } from './user/user.module';
 import { PhotosModule } from './photos/photos.module';
 import { StorageModule } from './storage/storage.module';
+import { CommentModule } from './comment/comment.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { StorageModule } from './storage/storage.module';
     MatchModule,
     PhotosModule,
     StorageModule,
+    CommentModule,
   ],
   providers: [
     {
