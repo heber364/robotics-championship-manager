@@ -1,17 +1,42 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
-import { AtGuard } from './common/guards';
+import { AtGuard, RolesGuard } from './common/guards';
 import { EmailModule } from './email/email.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { CategoryModule } from './category/category.module';
+import { TeamModule } from './team/team.module';
+import { ArenaModule } from './arena/arena.module';
+import { MatchModule } from './match/match.module';
+import { UserModule } from './user/user.module';
+import { PhotosModule } from './photos/photos.module';
+import { StorageModule } from './storage/storage.module';
+import { CommentModule } from './comment/comment.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, EmailModule, PrismaModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    AuthModule,
+    UserModule,
+    EmailModule,
+    PrismaModule,
+    CategoryModule,
+    TeamModule,
+    ArenaModule,
+    MatchModule,
+    PhotosModule,
+    StorageModule,
+    CommentModule,
+  ],
   providers: [
     {
       provide: 'APP_GUARD',
       useClass: AtGuard,
-    }
+    },
+    {
+      provide: 'APP_GUARD',
+      useClass: RolesGuard,
+    },
   ],
 })
-export class AppModule { }
+export class AppModule {}

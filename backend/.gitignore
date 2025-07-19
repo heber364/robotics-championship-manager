@@ -40,10 +40,11 @@ lerna-debug.log*
 .env.development
 .env.test
 .env.production
-
+.env.production
 # temp directory
 .temp
 .tmp
+docker-compose.yml
 
 # Runtime data
 pids

@@ -1,21 +1,28 @@
 import { NestFactory } from '@nestjs/core';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { PrismaExceptionFilter } from './prisma/prisma-exception.filter';
+import { SocketIoAdapter } from './common/adapters/socket-io.adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   const config = new DocumentBuilder()
-    .setTitle('Robotics Championship Management API')
-    .setDescription('This is the API documentation for the Robotics Championship Management application.')
+    .setTitle('Robotics Championship Manager API')
+    .setDescription('API for managing robotics championships')
     .setVersion('1.0')
-    //.addTag('api')
+    .addBearerAuth()
     .build();
 
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, documentFactory);
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
 
-  app.useGlobalPipes(new ValidationPipe({}));
+  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalFilters(new PrismaExceptionFilter());
+
+  app.useWebSocketAdapter(new SocketIoAdapter(app));
+
   await app.listen(process.env.PORT ?? 3333);
 }
-bootstrap();
+void bootstrap();

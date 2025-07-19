@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createTransport, SendMailOptions, Transporter } from 'nodemailer';
 import { SendEmailDto } from './dto/send-email.dto';
+import { Address } from 'nodemailer/lib/mailer';
 
 @Injectable()
 export class EmailService {
@@ -20,16 +21,12 @@ export class EmailService {
   async sendEmail(data: SendEmailDto): Promise<void> {
     const { sender, recipients, subject, html, text } = data;
 
-    const defaultSender = {
-      name: this.configService.get('MAIL_SENDER_NAME'),
-      address: this.configService.get('MAIL_SENDER_ADDRESS'),
+    const defaultSender: Address = {
+      name: this.configService.get<string>('MAIL_SENDER_NAME') || 'No Reply',
+      address: this.configService.get<string>('MAIL_SENDER_ADDRESS') || 'no-reply@localhost',
     };
 
     const from = sender ?? defaultSender;
-
-    if (!from.address) {
-      throw new InternalServerErrorException('No sender address configured.');
-    }
 
     const mailOptions: SendMailOptions = {
       from,
@@ -41,7 +38,8 @@ export class EmailService {
 
     try {
       await this.mailTransport.sendMail(mailOptions);
-    } catch (error) {
+    } catch (err) {
+      console.error('Error sending email:', err);
       throw new InternalServerErrorException('Failed to send email: mail service error.');
     }
   }

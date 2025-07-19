@@ -1,11 +1,26 @@
-import { ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthDto } from './dto';
+import {
+  SignInDto,
+  SignUpDto,
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  VerifyEmailDto,
+  RequestEmailVerificationDto,
+} from './dto';
 import { Tokens } from './types';
 import * as argon from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
+import * as crypto from 'crypto';
+import { Role } from '../common/enums';
 
 @Injectable()
 export class AuthService {
@@ -16,36 +31,36 @@ export class AuthService {
     private emailService: EmailService,
   ) {}
 
-  async signup(dto: AuthDto): Promise<{ userId: number }> {
+  async signup(signUpDto: SignUpDto): Promise<{ userId: number }> {
     const existingUser = await this.prismaService.user.findUnique({
       where: {
-        email: dto.email,
+        email: signUpDto.email,
       },
     });
 
     if (existingUser) {
       throw new ForbiddenException('User already exists');
     }
-    const hash = await argon.hash(dto.password);
+    const hash = await argon.hash(signUpDto.password);
 
     const newUser = await this.prismaService.user.create({
       data: {
-        email: dto.email,
+        name: signUpDto.name,
+        email: signUpDto.email,
         hash,
       },
     });
 
-    const otpCode = await this.generateOtpCode(newUser.id);
-
-    await this.sendOtpEmail(otpCode, newUser.email);
+    const token = await this.generateVerificationToken(newUser.id);
+    await this.sendVerificationEmail(token, newUser.email);
 
     return { userId: newUser.id };
   }
 
-  async signin(dto: AuthDto): Promise<{ userId: number }> {
+  async signin(SignInDto: SignInDto): Promise<Tokens> {
     const user = await this.prismaService.user.findUnique({
       where: {
-        email: dto.email,
+        email: SignInDto.email,
       },
     });
 
@@ -53,23 +68,27 @@ export class AuthService {
       throw new ForbiddenException('Credentials incorrect');
     }
 
-    const passwordMatches = await argon.verify(user.hash, dto.password);
+    const passwordMatches = await argon.verify(user.hash, SignInDto.password);
 
     if (!passwordMatches) {
-      throw new ForbiddenException('Access Deinied');
+      throw new ForbiddenException('Access Denied');
     }
 
-    const otpCode = await this.generateOtpCode(user.id);
+    if (!user.emailVerified) {
+      throw new ForbiddenException('Please verify your email before logging in');
+    }
 
-    await this.sendOtpEmail(otpCode, user.email);
-
-    return { userId: user.id };
+    const tokens = await this.getTokens(user.id, user.email, user.role);
+    await this.updateRtHash(user.id, tokens.refresh_token);
+    return tokens;
   }
 
-  async verifyOtp(dto: { userId: number; otpCode: string }): Promise<Tokens> {
+  async requestEmailVerification(
+    requestEmailVerificationDto: RequestEmailVerificationDto,
+  ): Promise<void> {
     const user = await this.prismaService.user.findUnique({
       where: {
-        id: dto.userId,
+        email: requestEmailVerificationDto.email,
       },
     });
 
@@ -77,31 +96,43 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    if (user.hashOtpCode === null || user.otpExpiresAt === null) {
-      throw new UnauthorizedException('Try to login first');
+    if (user.emailVerified) {
+      throw new ForbiddenException('Email already verified');
     }
 
-    const isOtpValid = await argon.verify(user.hashOtpCode, dto.otpCode);
+    const token = await this.generateVerificationToken(user.id);
+    await this.sendVerificationEmail(token, user.email);
+  }
 
-    if (!isOtpValid) {
-      throw new UnauthorizedException('Invalid OTP code');
+  async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<Tokens> {
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        emailVerificationToken: verifyEmailDto.token,
+        emailVerificationTokenExpiresAt: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired verification token');
     }
 
-    const isOtpExpired = user.otpExpiresAt && new Date() > user.otpExpiresAt;
+    await this.prismaService.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationTokenExpiresAt: null,
+      },
+    });
 
-    if (isOtpExpired) {
-      await this.clearOtpData(user.id);
-      throw new UnauthorizedException('OTP code expired');
-    }
-
-    await this.clearOtpData(user.id);
-
-    const tokens = await this.getTokens(user.id, user.email);
+    const tokens = await this.getTokens(user.id, user.email, user.role);
     await this.updateRtHash(user.id, tokens.refresh_token);
     return tokens;
   }
 
-  async logout(userId: number) {
+  async logout(userId: number): Promise<boolean> {
     await this.prismaService.user.updateMany({
       where: {
         id: userId,
@@ -116,7 +147,7 @@ export class AuthService {
     return true;
   }
 
-  async refreshToken(userId: number, rt: string): Promise<Tokens> {
+  async refreshToken(userId: number, refreshToken: string): Promise<Tokens> {
     const user = await this.prismaService.user.findUnique({
       where: {
         id: userId,
@@ -124,89 +155,133 @@ export class AuthService {
     });
 
     if (!user || !user.hashRt) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException('Access Denied');
     }
 
-    const rtMatches = await argon.verify(user.hashRt, rt);
+    const refreshTokenMatches = await argon.verify(user.hashRt, refreshToken);
 
-    if (!rtMatches) {
-      throw new ForbiddenException('Access denied');
+    if (!refreshTokenMatches) {
+      throw new ForbiddenException('Access Denied');
     }
 
-    const tokens = await this.getTokens(user.id, user.email);
+    const tokens = await this.getTokens(user.id, user.email, user.role);
     await this.updateRtHash(user.id, tokens.refresh_token);
     return tokens;
   }
 
-  private async generateOtpCode(userId: number): Promise<string> {
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const hashOtpCode = await argon.hash(otpCode);
-    const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiration
+  async changePassword(userId: number, changePasswordDto: ChangePasswordDto): Promise<void> {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const passwordMatches = await argon.verify(user.hash, changePasswordDto.oldPassword);
+
+    if (!passwordMatches) {
+      throw new ForbiddenException('Access Denied');
+    }
+
+    const newHash = await argon.hash(changePasswordDto.newPassword);
 
     await this.prismaService.user.update({
       where: {
         id: userId,
       },
       data: {
-        hashOtpCode,
-        otpExpiresAt,
+        hash: newHash,
+      },
+    });
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        email: forgotPasswordDto.email,
       },
     });
 
-    return otpCode;
+    if (!user) {
+      throw new ForbiddenException('Credentials incorrect');
+    }
+
+    const token = await this.generateVerificationToken(user.id);
+    await this.sendVerificationEmail(token, user.email);
   }
 
-  private async sendOtpEmail(otpCode: string, userEmail: string): Promise<void> {
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        emailVerificationToken: resetPasswordDto.token,
+        emailVerificationTokenExpiresAt: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired verification token');
+    }
+
+    const newHash = await argon.hash(resetPasswordDto.newPassword);
+
+    await this.prismaService.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        hash: newHash,
+        emailVerificationToken: null,
+        emailVerificationTokenExpiresAt: null,
+      },
+    });
+  }
+
+  private async generateVerificationToken(userId: number): Promise<string> {
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await this.prismaService.user.update({
+      where: { id: userId },
+      data: {
+        emailVerificationToken: token,
+        emailVerificationTokenExpiresAt: expiresAt,
+      },
+    });
+
+    return token;
+  }
+
+  private async sendVerificationEmail(token: string, userEmail: string): Promise<void> {
+    const verificationLink = `${this.config.get('FRONTEND_URL')}/verify-email?token=${token}`;
+
     await this.emailService.sendEmail({
       recipients: userEmail,
-      subject: 'Seu código de verificação',
-      text: `Seu código de verificação é: ${otpCode}`,
+      subject: 'Verifique seu email',
+      text: `Clique no link para verificar seu email: ${verificationLink}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 400px;">
-          <h2>Verificação de Login</h2>
-          <p>Use o código abaixo para acessar sua conta:</p>
-          <div style="font-size: 2rem; font-weight: bold; letter-spacing: 4px; margin: 16px 0;">
-            ${otpCode}
-          </div>
-          <p>O código expira em 5 minutos.</p>
-          <p>Se você não solicitou este código, ignore este email.</p>
+          <h2>Verificação de Email</h2>
+          <p>Clique no link abaixo para verificar seu email:</p>
+          <p><a href="${verificationLink}">${verificationLink}</a></p>
+          <p>O link expira em 24 horas.</p>
+          <p>Se você não solicitou esta verificação, ignore este email.</p>
         </div>
       `,
     });
   }
 
-  private async clearOtpData(userId: number): Promise<void> {
-    await this.prismaService.user.updateMany({
-      where: {
-        id: userId,
-        AND: [{ hashOtpCode: { not: null } }, { otpExpiresAt: { not: null } }],
-      },
-      data: {
-        hashOtpCode: null,
-        otpExpiresAt: null,
-      },
-    });
-  }
-
-  private async updateRtHash(userId: number, rt: string) {
-    const hash = await argon.hash(rt);
-
-    await this.prismaService.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        hashRt: hash,
-      },
-    });
-  }
-
-  private async getTokens(userId: number, email: string): Promise<Tokens> {
-    const [atToken, rtToken] = await Promise.all([
+  private async getTokens(userId: number, email: string, role: Role): Promise<Tokens> {
+    const [at, rt] = await Promise.all([
       this.jwtService.signAsync(
         {
           sub: userId,
           email,
+          role,
         },
         {
           expiresIn: this.config.get('AT_EXPIRATION_TIME'),
@@ -217,6 +292,7 @@ export class AuthService {
         {
           sub: userId,
           email,
+          role,
         },
         {
           expiresIn: this.config.get('RT_EXPIRATION_TIME'),
@@ -226,8 +302,20 @@ export class AuthService {
     ]);
 
     return {
-      access_token: atToken,
-      refresh_token: rtToken,
+      access_token: at,
+      refresh_token: rt,
     };
+  }
+
+  private async updateRtHash(userId: number, refreshToken: string): Promise<void> {
+    const hash = await argon.hash(refreshToken);
+    await this.prismaService.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        hashRt: hash,
+      },
+    });
   }
 }

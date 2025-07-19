@@ -9,18 +9,150 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  email        String    @unique
-  hash         String
-  hashRt       String?
-  roles        Role[]
-  hashOtpCode  String?
-  otpExpiresAt DateTime?
+  name                            String
+  email                           String         @unique
+  hash                            String
+  hashRt                          String?        @map("hash_rt")
+  role                            Role           @default(USER)
+  emailVerified                   Boolean        @default(false) @map("email_verified")
+  emailVerificationToken          String?        @map("email_verification_token")
+  emailVerificationTokenExpiresAt DateTime?      @map("email_verification_token_expires_at")
+  teams                           UsersOnTeams[]
+  judgedMatches                   Match[]        @relation("JudgedMatches")
+  comments                        Comment[]
+
+  @@map("users")
 }
 
 enum Role {
-  USER
+  SUPER_ADMIN
   ADMIN
+  JUDGE
+  ASSISTANT
+  USER
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name        String
+  description String
+  scoreRules  String  @map("score_rules")
+  arenas      Arena[]
+  teams       Team[]
+
+  @@map("categories")
+}
+
+model Arena {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name        String
+  youtubeLink String   @map("youtube_link")
+  idCategory  Int      @map("id_category")
+  category    Category @relation(fields: [idCategory], references: [id])
+  match       Match[]
+
+  @@map("arenas")
+}
+
+model Team {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name       String
+  robotName  String         @map("robot_name")
+  idCategory Int            @map("id_category")
+  category   Category       @relation(fields: [idCategory], references: [id])
+  matchesA   Match[]        @relation("TeamAMatches")
+  matchesB   Match[]        @relation("TeamBMatches")
+  users      UsersOnTeams[]
+
+  @@map("teams")
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  FINISHED
+  CANCELLED
+}
+
+model Match {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  idTeamA     Int         @map("id_team_a")
+  teamA       Team        @relation("TeamAMatches", fields: [idTeamA], references: [id])
+  idTeamB     Int         @map("id_team_b")
+  teamB       Team        @relation("TeamBMatches", fields: [idTeamB], references: [id])
+  idArena     Int         @map("id_arena")
+  arena       Arena       @relation(fields: [idArena], references: [id])
+  date        DateTime
+  status      MatchStatus @default(SCHEDULED)
+  startTime   DateTime?   @map("start_time")
+  endTime     DateTime?   @map("end_time")
+  observation String?
+  teamAScore  Int         @default(0) @map("team_a_score")
+  teamBScore  Int         @default(0) @map("team_b_score")
+  idJudge     Int         @map("id_judge")
+  judge       User        @relation("JudgedMatches", fields: [idJudge], references: [id])
+  comments    Comment[]
+  photos      Photo[]
+
+  @@map("matches")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  content String
+
+  idMatch Int   @map("id_match")
+  match   Match @relation(fields: [idMatch], references: [id])
+
+  idUser Int  @map("id_user")
+  author User @relation(fields: [idUser], references: [id])
+
+  @@map("comments")
+}
+
+model Photo {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  url     String 
+  caption String? 
+
+ 
+  idMatch Int   @map("id_match")
+  match   Match @relation(fields: [idMatch], references: [id])
+
+  @@map("photos")
+}
+
+model UsersOnTeams {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  idUser Int  @map("id_user")
+  user   User @relation(fields: [idUser], references: [id])
+  idTeam Int  @map("id_team")
+  team   Team @relation(fields: [idTeam], references: [id])
+
+  @@unique([idUser, idTeam])
+  @@map("users_on_teams")
 }

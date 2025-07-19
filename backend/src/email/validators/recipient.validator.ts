@@ -4,7 +4,6 @@ import {
   IsString,
   ValidatorConstraint,
   ValidatorConstraintInterface,
-  ValidationArguments,
   isEmail,
   validateSync,
 } from 'class-validator';
@@ -23,38 +22,51 @@ export class AddressDto implements Address {
 
 @ValidatorConstraint({ name: 'IsRecipientValid', async: false })
 export class IsRecipientValid implements ValidatorConstraintInterface {
-  validate(value: any, _args: ValidationArguments) {
+  validate(value: unknown): boolean {
     if (typeof value === 'string') {
       return isEmail(value);
     }
+
     if (Array.isArray(value)) {
+      // Validate each item in the array.
+      // An item can be a string (email) or a valid AddressDto object.
       return value.every(
-        (v) =>
-          (typeof v === 'string' && isEmail(v)) ||
-          (typeof v === 'object' &&
-            v !== null &&
-            'address' in v &&
-            isEmail(v.address) &&
-            this.isValidAddressDto(v)),
+        (item: unknown) =>
+          (typeof item === 'string' && isEmail(item)) || this.isValidAddressDto(item),
       );
     }
-    // objeto AddressDto
-    return (
-      typeof value === 'object' &&
-      value !== null &&
-      'address' in value &&
-      isEmail(value.address) &&
-      this.isValidAddressDto(value)
-    );
+
+    // If it's not a string or an array, it must be a single AddressDto object.
+    return this.isValidAddressDto(value);
   }
 
-  isValidAddressDto(obj: any) {
-    const dto = Object.assign(new AddressDto(), obj);
-    const errors = validateSync(dto);
+  /**
+   * Checks if an unknown value is a valid AddressDto object.
+   * This method safely handles type checking and validation.
+   * @param obj The value to validate.
+   * @returns True if the object is a valid AddressDto, otherwise false.
+   */
+  isValidAddressDto(obj: unknown): boolean {
+    // An AddressDto must be a non-null object.
+    if (typeof obj !== 'object' || obj === null) {
+      return false;
+    }
+
+    // To safely handle the unknown object, we create a new AddressDto instance
+    // and manually assign the properties after checking their types.
+    const addressDto = new AddressDto();
+    const potentialDto = obj as Record<string, unknown>;
+
+    addressDto.address = typeof potentialDto.address === 'string' ? potentialDto.address : '';
+    addressDto.name = typeof potentialDto.name === 'string' ? potentialDto.name : '';
+
+    // `validateSync` now receives a correctly typed object.
+    // The validators (@IsEmail, @IsNotEmpty) will catch any invalid values.
+    const errors = validateSync(addressDto);
     return errors.length === 0;
   }
 
-  defaultMessage(_args: ValidationArguments) {
-    return 'recipients deve ser um email, array de emails, AddressDto válido ou array de AddressDto válidos';
+  defaultMessage(): string {
+    return 'recipients must be a valid email, an array of emails, a valid AddressDto, or an array of valid AddressDtos';
   }
 }
