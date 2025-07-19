@@ -1,14 +1,22 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { CreateMatchDto, UpdateMatchDto } from './dto';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { CreateMatchDto, UpdateMatchDto, UpdateMatchScoreDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { TeamIdentifier } from './dto/update-match-score.dto';
 import { MatchEntity } from './entities/match.entity';
-import { MatchStatus } from '@prisma/client';
-
-import { UpdateMatchResultDto } from './dto';
+import { MatchGateway } from './match.gateway';
+import { MatchStatus } from './enums/match-status.enum';
 
 @Injectable()
 export class MatchService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private readonly matchGateway: MatchGateway,
+  ) {}
 
   async create(createMatchDto: CreateMatchDto): Promise<MatchEntity> {
     return await this.prismaService.match.create({
@@ -18,6 +26,7 @@ export class MatchService {
         idArena: createMatchDto.idArena,
         date: createMatchDto.date,
         observation: createMatchDto.observation,
+        idJudge: createMatchDto.idJudge,
       },
       select: {
         id: true,
@@ -29,7 +38,9 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -48,7 +59,9 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -71,7 +84,9 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -92,7 +107,7 @@ export class MatchService {
       throw new NotFoundException('Match not found');
     }
 
-    return await this.prismaService.match.update({
+    const updatedMatch = await this.prismaService.match.update({
       where: { id },
       data: updateMatchDto,
       select: {
@@ -105,11 +120,17 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+
+    this.matchGateway.broadcastMatchUpdate(id, updatedMatch);
+
+    return updatedMatch;
   }
 
   async remove(id: number): Promise<boolean> {
@@ -128,21 +149,25 @@ export class MatchService {
     return true;
   }
 
-  async startMatch(matchId: number) {
+  async startMatch(id: number, judgeId: number) {
     const match = await this.prismaService.match.findUnique({
-      where: { id: matchId },
+      where: { id },
     });
 
     if (!match) {
       throw new NotFoundException('Match not found');
     }
 
+    if (match.idJudge !== judgeId) {
+      throw new UnauthorizedException('You are not authorized to start this match.');
+    }
+
     if (match.status !== MatchStatus.SCHEDULED) {
       throw new BadRequestException('Can only start matches that are scheduled');
     }
 
-    return this.prismaService.match.update({
-      where: { id: matchId },
+    const updatedMatch = await this.prismaService.match.update({
+      where: { id },
       data: {
         status: MatchStatus.IN_PROGRESS,
         startTime: new Date(),
@@ -157,28 +182,36 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+
+    this.matchGateway.broadcastMatchUpdate(id, updatedMatch);
   }
 
-  async pauseMatch(matchId: number) {
+  async pauseMatch(id: number, judgeId: number) {
     const match = await this.prismaService.match.findUnique({
-      where: { id: matchId },
+      where: { id },
     });
 
     if (!match) {
       throw new NotFoundException('Match not found');
     }
 
+    if (match.idJudge !== judgeId) {
+      throw new UnauthorizedException('You are not authorized to pause this match.');
+    }
+
     if (match.status !== MatchStatus.IN_PROGRESS) {
       throw new BadRequestException('Can only pause matches that are in progress');
     }
 
-    return this.prismaService.match.update({
-      where: { id: matchId },
+    const updatedMatch = await this.prismaService.match.update({
+      where: { id },
       data: {
         status: MatchStatus.SCHEDULED,
       },
@@ -192,20 +225,28 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+    this.matchGateway.broadcastMatchUpdate(id, updatedMatch);
+    return updatedMatch;
   }
 
-  async endMatch(matchId: number) {
+  async endMatch(id: number, judgeId: number) {
     const match = await this.prismaService.match.findUnique({
-      where: { id: matchId },
+      where: { id },
     });
 
     if (!match) {
       throw new NotFoundException('Match not found');
+    }
+
+    if (match.idJudge !== judgeId) {
+      throw new UnauthorizedException('You are not authorized to end this match.');
     }
 
     if (match.status === MatchStatus.FINISHED) {
@@ -216,8 +257,8 @@ export class MatchService {
       throw new BadRequestException('Cannot end a cancelled match');
     }
 
-    return this.prismaService.match.update({
-      where: { id: matchId },
+    const updatedMatch = await this.prismaService.match.update({
+      where: { id },
       data: {
         status: MatchStatus.FINISHED,
         endTime: new Date(),
@@ -232,30 +273,46 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+
+    this.matchGateway.broadcastMatchUpdate(id, updatedMatch);
+    return updatedMatch;
   }
 
-  async updateMatchResult(matchId: number, updateMatchResultDto: UpdateMatchResultDto) {
+  async updateMatchScore(id: number, updateMatchScoreDto: UpdateMatchScoreDto, judgeId: number) {
     const match = await this.prismaService.match.findUnique({
-      where: { id: matchId },
+      where: { id },
     });
 
     if (!match) {
       throw new NotFoundException('Match not found');
     }
 
-    if (match.status !== MatchStatus.IN_PROGRESS) {
-      throw new BadRequestException('Can only update result for matches in progress');
+    if (match.idJudge !== judgeId) {
+      throw new UnauthorizedException('You are not authorized to update the score for this match.');
     }
 
-    return this.prismaService.match.update({
-      where: { id: matchId },
+    if (match.status !== MatchStatus.IN_PROGRESS) {
+      throw new BadRequestException('Can only update score for matches in progress');
+    }
+
+    const scoreFieldMap = {
+      [TeamIdentifier.A]: 'teamAScore',
+      [TeamIdentifier.B]: 'teamBScore',
+    };
+
+    const fieldToUpdate = scoreFieldMap[updateMatchScoreDto.team];
+
+    const updatedMatch = await this.prismaService.match.update({
+      where: { id },
       data: {
-        matchResult: updateMatchResultDto.result,
+        [fieldToUpdate]: updateMatchScoreDto.score,
       },
       select: {
         id: true,
@@ -267,10 +324,15 @@ export class MatchService {
         startTime: true,
         endTime: true,
         observation: true,
-        matchResult: true,
+        teamAScore: true,
+        teamBScore: true,
+        idJudge: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+
+    this.matchGateway.broadcastMatchUpdate(id, updatedMatch);
+    return updatedMatch;
   }
 }

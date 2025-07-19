@@ -21,6 +21,8 @@ model User {
   emailVerificationToken          String?        @map("email_verification_token")
   emailVerificationTokenExpiresAt DateTime?      @map("email_verification_token_expires_at")
   teams                           UsersOnTeams[]
+  judgedMatches                   Match[]        @relation("JudgedMatches")
+  comments                        Comment[]
 
   @@map("users")
 }
@@ -77,12 +79,6 @@ model Team {
   @@map("teams")
 }
 
-enum MatchResult {
-  TEAM_A
-  TEAM_B
-  DRAW
-}
-
 enum MatchStatus {
   SCHEDULED
   IN_PROGRESS
@@ -95,20 +91,56 @@ model Match {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  idTeamA     Int          @map("id_team_a")
-  teamA       Team         @relation("TeamAMatches", fields: [idTeamA], references: [id])
-  idTeamB     Int          @map("id_team_b")
-  teamB       Team         @relation("TeamBMatches", fields: [idTeamB], references: [id])
-  idArena     Int          @map("id_arena")
-  arena       Arena        @relation(fields: [idArena], references: [id])
+  idTeamA     Int         @map("id_team_a")
+  teamA       Team        @relation("TeamAMatches", fields: [idTeamA], references: [id])
+  idTeamB     Int         @map("id_team_b")
+  teamB       Team        @relation("TeamBMatches", fields: [idTeamB], references: [id])
+  idArena     Int         @map("id_arena")
+  arena       Arena       @relation(fields: [idArena], references: [id])
   date        DateTime
-  status      MatchStatus  @default(SCHEDULED)
-  startTime   DateTime?    @map("start_time")
-  endTime     DateTime?    @map("end_time")
+  status      MatchStatus @default(SCHEDULED)
+  startTime   DateTime?   @map("start_time")
+  endTime     DateTime?   @map("end_time")
   observation String?
-  matchResult MatchResult? @map("match_result")
+  teamAScore  Int         @default(0) @map("team_a_score")
+  teamBScore  Int         @default(0) @map("team_b_score")
+  idJudge     Int         @map("id_judge")
+  judge       User        @relation("JudgedMatches", fields: [idJudge], references: [id])
+  comments    Comment[]
+  photos      Photo[]
 
   @@map("matches")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  content String
+
+  idMatch Int   @map("id_match")
+  match   Match @relation(fields: [idMatch], references: [id])
+
+  idUser Int  @map("id_user")
+  author User @relation(fields: [idUser], references: [id])
+
+  @@map("comments")
+}
+
+model Photo {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  url     String 
+  caption String? 
+
+ 
+  idMatch Int   @map("id_match")
+  match   Match @relation(fields: [idMatch], references: [id])
+
+  @@map("photos")
 }
 
 model UsersOnTeams {

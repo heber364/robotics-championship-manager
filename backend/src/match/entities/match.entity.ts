@@ -1,4 +1,4 @@
-import { Match, MatchResult } from '@prisma/client';
+import { Match } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { MatchStatus } from '../enums';
 
@@ -30,8 +30,14 @@ export class MatchEntity implements Match {
   @ApiProperty({ nullable: true })
   observation: string | null;
 
-  @ApiProperty({ enum: MatchResult, nullable: true })
-  matchResult: MatchResult | null;
+  @ApiProperty()
+  teamAScore: number
+
+  @ApiProperty()
+  teamBScore: number
+
+  @ApiProperty()
+  idJudge: number
 
   @ApiProperty()
   createdAt: Date;

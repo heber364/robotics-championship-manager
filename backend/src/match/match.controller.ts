@@ -1,10 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { MatchService } from './match.service';
-import { CreateMatchDto, UpdateMatchDto, UpdateMatchResultDto } from './dto';
+import { CreateMatchDto, UpdateMatchDto, UpdateMatchScoreDto } from './dto';
 import { ApiOkResponse, ApiCreatedResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { MatchEntity } from './entities/match.entity';
-import { Roles } from '../common/decorators';
+import { GetCurrentUserId, Public, Roles } from '../common/decorators';
 import { Role } from '../common/enums';
+import { Express } from 'express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { ImageFileValidationPipe } from 'src/common/validators';
 
 @ApiBearerAuth()
 @Controller('matches')
@@ -12,7 +26,7 @@ export class MatchController {
   constructor(private readonly matchService: MatchService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @ApiCreatedResponse({ type: MatchEntity })
   create(@Body() createMatchDto: CreateMatchDto) {
     return this.matchService.create(createMatchDto);
@@ -31,14 +45,14 @@ export class MatchController {
   }
 
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @ApiOkResponse({ type: MatchEntity })
   update(@Param('id', ParseIntPipe) id: number, @Body() updateMatchDto: UpdateMatchDto) {
     return this.matchService.update(id, updateMatchDto);
   }
 
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @ApiOkResponse({ type: Boolean })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.matchService.remove(id);
@@ -46,29 +60,31 @@ export class MatchController {
 
   @Post(':id/start')
   @Roles(Role.JUDGE)
-  startMatch(@Param('id', ParseIntPipe) id: number) {
-    return this.matchService.startMatch(id);
+  startMatch(@Param('id', ParseIntPipe) id: number, @GetCurrentUserId() userId: number) {
+    return this.matchService.startMatch(id, userId);
   }
 
   @Post(':id/pause')
   @Roles(Role.JUDGE)
-  pauseMatch(@Param('id', ParseIntPipe) id: number) {
-    return this.matchService.pauseMatch(id);
+  pauseMatch(@Param('id', ParseIntPipe) id: number, @GetCurrentUserId() userId: number) {
+    return this.matchService.pauseMatch(id, userId);
   }
 
   @Post(':id/end')
   @Roles(Role.JUDGE)
-  endMatch(@Param('id', ParseIntPipe) id: number) {
-    return this.matchService.endMatch(id);
+  endMatch(@Param('id', ParseIntPipe) id: number, @GetCurrentUserId() userId: number) {
+    return this.matchService.endMatch(id, userId);
   }
 
-  @Patch(':id/result')
+  @Patch(':id/score')
   @Roles(Role.JUDGE)
   @ApiOkResponse({ type: MatchEntity })
-  updateMatchResult(
+  updateMatchScore(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateMatchResultDto: UpdateMatchResultDto,
+    @Body() updateMatchScoreDto: UpdateMatchScoreDto,
+    @GetCurrentUserId() userId: number,
   ) {
-    return this.matchService.updateMatchResult(id, updateMatchResultDto);
+    return this.matchService.updateMatchScore(id, updateMatchScoreDto, userId);
   }
+
 }

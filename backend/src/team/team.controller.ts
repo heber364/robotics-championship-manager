@@ -53,4 +53,14 @@ export class TeamController {
   ) {
     return this.teamService.linkUserToTeam(userId, teamId);
   }
+
+  @Delete(':teamId/users/:userId')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @ApiOkResponse({ type: Boolean })
+  unlinkUserToTeam(
+    @Param('teamId', ParseIntPipe) teamId: number,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.teamService.unlinkUserToTeam(userId, teamId);
+  }
 }
