@@ -40,10 +40,11 @@ lerna-debug.log*
 .env.development
 .env.test
 .env.production
-
+.env.production
 # temp directory
 .temp
 .tmp
+docker-compose.yml
 
 # Runtime data
 pids
@@ -53,6 +54,3 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
-# Docker
-docker-compose.yml

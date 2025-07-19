@@ -5,10 +5,15 @@ WORKDIR /usr/src/app
 COPY . .
 
 RUN yarn --quiet --no-optional --no-fund --loglevel=error
+
+# Run prisma generate
 RUN yarn prisma generate
+
+# Run database migrations
+RUN yarn prisma:prd:deploy
 
 RUN yarn build
 
-EXPOSE 3000
+CMD ["yarn", "start:prod"]
 
-CMD ["sh", "-c", "yarn prisma:prd:deploy && yarn start:prod"]
+EXPOSE 3000
