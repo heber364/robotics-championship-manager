@@ -116,4 +116,46 @@ export class TeamService {
 
     return true;
   }
+
+  async unlinkUserToTeam(userId: number, teamId: number): Promise<boolean> {
+    const team = await this.prismaService.team.findUnique({
+      where: { id: teamId },
+    });
+
+    if (!team) {
+      throw new NotFoundException('Team not found');
+    }
+
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const userTeamLink = await this.prismaService.usersOnTeams.findUnique({
+      where: {
+        idUser_idTeam: {
+          idUser: userId,
+          idTeam: teamId,
+        },
+      },
+    });
+
+    if (!userTeamLink) {
+      throw new NotFoundException('User is not linked to this team');
+    }
+
+    await this.prismaService.usersOnTeams.delete({
+      where: {
+        idUser_idTeam: {         
+          idUser: userId,
+          idTeam: teamId,
+        },
+      },
+    });
+
+    return true;
+  }
 }

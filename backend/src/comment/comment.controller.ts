@@ -7,24 +7,21 @@ import {
   Param,
   Delete,
   ParseIntPipe,
-  UseGuards,
 } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { CreateCommentDto, UpdateCommentDto } from './dto';
-import { GetCurrentUserId, Roles } from 'src/common/decorators';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { GetCurrentUserId, Public, Roles } from 'src/common/decorators';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import { Role } from 'src/common/enums';
-import { RolesGuard } from 'src/common/guards';
 import { CommentEntity } from './entities';
 
-@ApiTags('comments')
+@ApiBearerAuth()
 @Controller('matches/:idMatch/comments')
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
   @Post()
   @Roles(Role.JUDGE, Role.ASSISTANT)
-  @UseGuards(RolesGuard)
   @ApiCreatedResponse({ type: CommentEntity })
   create(
     @Param('idMatch', ParseIntPipe) idMatch: number,
@@ -35,6 +32,7 @@ export class CommentController {
   }
 
   @Get()
+  @Public()
   @ApiOkResponse({ type: [CommentEntity] })
   findAllByMatch(@Param('idMatch', ParseIntPipe) idMatch: number) {
     return this.commentService.findAllByMatch(idMatch);
@@ -42,20 +40,19 @@ export class CommentController {
 
   @Patch(':idComment')
   @Roles(Role.JUDGE, Role.ASSISTANT)
-  @UseGuards(RolesGuard)
   @ApiOkResponse({ type: CommentEntity })
   update(
     @Param('idComment', ParseIntPipe) id: number,
     @Body() updateCommentDto: UpdateCommentDto,
+    @GetCurrentUserId() idUser: number
   ) {
-    return this.commentService.update(id, updateCommentDto);
+    return this.commentService.update(id, updateCommentDto, idUser);
   }
 
   @Delete(':idComment')
   @Roles(Role.JUDGE, Role.ASSISTANT)
-  @UseGuards(RolesGuard)
   @ApiOkResponse()
-  remove(@Param('idComment', ParseIntPipe) id: number) {
-    return this.commentService.remove(id);
+  remove(@Param('idComment', ParseIntPipe) id: number, @GetCurrentUserId() idUser: number) {
+    return this.commentService.remove(id, idUser);
   }
 }

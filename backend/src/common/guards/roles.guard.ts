@@ -20,6 +20,11 @@ export class RolesGuard implements CanActivate {
 
     const { user } = context.switchToHttp().getRequest<Request & { user: JwtPayload }>();
 
+    if(!user) {
+      console.error('User not found in request context');
+      return false;
+    }
+
     return user.role === Role.SUPER_ADMIN || requiredRoles.some((role) => user.role === role);
   }
 }

@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { MatchService } from './match.service';
 import { CreateMatchDto, UpdateMatchDto, UpdateMatchScoreDto } from './dto';
-import { ApiOkResponse, ApiCreatedResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { ApiOkResponse, ApiCreatedResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { MatchEntity } from './entities/match.entity';
 import { GetCurrentUserId, Public, Roles } from '../common/decorators';
 import { Role } from '../common/enums';
